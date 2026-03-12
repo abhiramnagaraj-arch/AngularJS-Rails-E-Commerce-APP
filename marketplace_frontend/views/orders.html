@@ -1,0 +1,78 @@
+<div class="container mt-4">
+    <h2>My Orders</h2>
+    <div ng-if="orders.length === 0" class="alert alert-info mt-3">
+        You haven't placed any orders yet.
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12" ng-repeat="order in orders | orderBy:'-created_at'">
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>Order #{{order.id}}</strong>
+                        <span class="text-muted ms-2">{{order.created_at | date:'medium'}}</span>
+                    </div>
+                    <div>
+                        <span class="badge bg-primary fs-6">{{order.status | uppercase}}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless mb-0">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Price</th>
+                                <th>Qty</th>
+                                <th>Status</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="item in order.order_items">
+                                <td class="d-flex align-items-center">
+                                    <div class="bg-light p-2 rounded me-3 shadow-sm border"
+                                        style="width: 60px; height: 60px;">
+                                        <img ng-src="{{item.product.image_url || 'https://dummyimage.com/60x60/dee2e6/6c757d.png&text=No+Img'}}"
+                                            class="w-100 h-100 rounded" style="object-fit: cover;">
+                                    </div>
+                                    <span class="ms-2">{{item.product.name}}</span>
+                                </td>
+                                <td>₹{{item.price_at_purchase}}</td>
+                                <td>{{item.quantity}}</td>
+                                <td>
+                                    <span
+                                        class="badge {{item.status === 'delivered' ? 'bg-success' : (item.status === 'shipped' ? 'bg-info' : 'bg-secondary')}} rounded-pill">
+                                        {{item.status || 'pending' | uppercase}}
+                                    </span>
+                                </td>
+                                <td><strong>₹{{item.price_at_purchase * item.quantity}}</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Delivery info moved out of outside the card -->
+                <div class="card-footer bg-white border-top-0 d-flex justify-content-between align-items-center p-4">
+                    <div class="small w-50 pe-3 border-end">
+                        <strong class="text-uppercase text-muted d-block mb-2">Delivery & Order Details</strong>
+                        <div ng-if="order.shipping_address">
+                            <span class="fw-bold">{{order.shipping_address.name}}</span><br>
+                            {{order.shipping_address.street}}, {{order.shipping_address.city}}<br>
+                            {{order.shipping_address.state}}, {{order.shipping_address.zip}}<br>
+                            Phone: {{order.shipping_address.phone}}
+                        </div>
+                        <div ng-if="!order.shipping_address" class="text-muted fst-italic">
+                            No delivery address provided.
+                        </div>
+                        <div class="mt-2 text-primary fw-bold">
+                            <i class="bi bi-credit-card me-1"></i> Payment: {{order.payment_method || 'Online'}}
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <h5 class="mb-0 text-dark">Order Total</h5>
+                        <h3 class="fw-bold mb-0" style="color: var(--jiomart-blue);">₹{{order.total_amount}}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

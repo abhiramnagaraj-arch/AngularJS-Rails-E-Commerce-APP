@@ -1,0 +1,121 @@
+<div class="container mt-4">
+    <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+        <div class="row g-0">
+            <div class="col-md-6 d-flex align-items-center justify-content-center p-4 border-end">
+                <div class="bg-light p-4 rounded-4 text-center border shadow-sm"
+                    style="height: 400px; display: flex; align-items: center; justify-content: center;">
+                    <img ng-src="{{product.image_url || 'https://dummyimage.com/600x600/dee2e6/6c757d.png&text=No+Image'}}"
+                        class="img-fluid rounded shadow" style="max-height: 100%; object-fit: contain;"
+                        alt="{{product.name}}">
+                </div>
+            </div>
+            <div class="col-md-6 p-4 p-lg-5">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="#!/products" class="text-decoration-none"
+                                style="color: var(--jiomart-blue);">Shop</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">{{product.category.name}}</li>
+                    </ol>
+                </nav>
+                <a href="#!/products?category={{product.category.name}}"
+                    class="badge text-bg-secondary text-decoration-none mb-2 d-inline-block">{{product.category.name}}</a>
+                <h2 class="fw-bold mb-3">{{product.name}}</h2>
+                <h3 class="text-primary fw-bold mb-4">₹{{product.price}}</h3>
+                <p class="text-muted mb-3">Sold by <span class="fw-bold text-dark">{{product.seller.store_name}}</span>
+                </p>
+
+                <div class="d-flex align-items-baseline mb-4">
+                    <span class="text-muted text-decoration-line-through small">₹{{product.price * 1.25 |
+                        number:0}}</span>
+                    <span class="badge bg-success ms-3 rounded-pill">-20% OFF</span>
+                </div>
+
+                <div class="mt-4">
+                    <button class="btn btn-primary btn-lg w-100 py-3 fw-bold rounded-pill text-uppercase shadow-sm"
+                        ng-click="addToCart(product)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                            class="bi bi-cart-plus me-2" viewBox="0 0 16 16">
+                            <path
+                                d="M9 5.5a.5.5 0 0 0-1 0V7H6.5a.5.5 0 0 0 0 1H8v1.5a.5.5 0 0 0 1 0V8h1.5a.5.5 0 0 0 0-1H9V5.5z" />
+                            <path
+                                d="M.5 1a.5.5 0 0 0 0 1h1.11l.401 1.607 1.498 7.985A.5.5 0 0 0 4 12h1a2 2 0 1 0 0 4 2 2 0 0 0 0-4h7a2 2 0 1 0 0 4 2 2 0 0 0 0-4h1a.5.5 0 0 0 .491-.408l1.5-8A.5.5 0 0 0 14.5 3H2.89l-.405-1.621A.5.5 0 0 0 2 1H.5zm3.915 10L3.102 4h10.796l-1.313 7h-8.17zM6 14a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm7 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z" />
+                        </svg>
+                        Add to Cart
+                    </button>
+                </div>
+
+                <div class="mt-5">
+                    <h5 class="fw-bold border-bottom pb-2">Product Description</h5>
+                    <p class="text-muted lh-lg">{{product.description}}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-5 mb-5 p-4 bg-white rounded-4 shadow-sm">
+        <h4 class="fw-bold mb-4">Customer Ratings & Reviews</h4>
+
+        <div ng-show="product.reviews.length == 0" class="alert alert-light border text-center py-4">
+            <p class="mb-0 text-muted">Be the first to share your thoughts on this product!</p>
+        </div>
+
+        <div class="list-group list-group-flush" ng-show="product.reviews.length > 0">
+            <div class="list-group-item py-4 bg-transparent border-bottom px-0"
+                ng-repeat="review in product.reviews | orderBy:'-created_at'">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="bg-light rounded-circle d-flex align-items-center justify-content-center me-3 shadow-sm border"
+                        style="width: 40px; height: 40px;">
+                        <span class="text-muted fw-bold text-uppercase">{{review.user.email.charAt(0)}}</span>
+                    </div>
+                    <div>
+                        <div class="fw-bold text-dark">{{review.user.email.split('@')[0]}}</div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="text-warning me-2" style="font-size: 1.1rem;">
+                        <span ng-repeat="n in [].constructor(5) track by $index">
+                            <i class="bi bi-star-fill" ng-show="$index < review.rating">★</i>
+                            <i class="bi bi-star" style="color: #dee2e6;" ng-show="$index >= review.rating">★</i>
+                        </span>
+                    </div>
+                    <span class="text-muted small fw-medium">Reviewed on {{review.created_at |
+                        date:'mediumDate'}}</span>
+                </div>
+                <p class="mb-2 text-dark" style="line-height: 1.6;">{{review.comment}}</p>
+                <div class="d-flex justify-content-between align-items-center text-muted small mt-2">
+                    <span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1">✓</i> Verified
+                        Purchase</span>
+                    <button class="btn btn-sm btn-outline-danger shadow-sm fw-bold px-3 py-1 rounded-pill"
+                        ng-if="isAdmin" ng-click="deleteReview(review.id)">
+                        <i class="bi bi-trash-fill me-1"></i> Delete Content
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Review Form -->
+        <div class="mt-5 border-top pt-4" ng-show="isLoggedIn && currentUser.id !== product.seller.user_id">
+            <h5 class="fw-bold mb-3">Rate this Product</h5>
+            <form ng-submit="submitReview()" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold">Your Rating</label>
+                    <select class="form-select rounded-3 border-2" ng-model="newReview.rating" required>
+                        <option value="5">Excellent — 5 Stars</option>
+                        <option value="4">Good — 4 Stars</option>
+                        <option value="3">Average — 3 Stars</option>
+                        <option value="2">Poor — 2 Stars</option>
+                        <option value="1">Very Poor — 1 Star</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label small fw-bold">Your Review</label>
+                    <textarea class="form-control rounded-3 border-2" rows="3" ng-model="newReview.comment"
+                        placeholder="Tell others what you think..." required></textarea>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-dark px-4 py-2 rounded-pill fw-bold">Post Review</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

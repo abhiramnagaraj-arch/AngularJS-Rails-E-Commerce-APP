@@ -1,0 +1,29 @@
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 card p-4">
+            <h2 class="text-center mb-4">Signup</h2>
+            <form ng-submit="signup()">
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-control" ng-model="user.email" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-control" ng-model="user.password" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Confirm Password</label>
+                    <input type="password" class="form-control" ng-model="user.password_confirmation" required>
+                </div>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="becomeSeller" ng-model="user.become_seller">
+                    <label class="form-check-label px-2" for="becomeSeller">I want to sell on JioMart</label>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Register</button>
+            </form>
+            <div class="mt-3 text-center">
+                Already have an account? <a href="#!/login">Login</a>
+            </div>
+        </div>
+    </div>
+</div>

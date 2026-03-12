@@ -1,0 +1,52 @@
+# ========================
+# Environment & Secrets
+# ========================
+.env
+.env.*
+*.key
+
+# ========================
+# Ruby / Rails
+# ========================
+marketplace_api/.bundle/
+marketplace_api/log/*
+!marketplace_api/log/.keep
+marketplace_api/tmp/*
+!marketplace_api/tmp/.keep
+!marketplace_api/tmp/pids/
+!marketplace_api/tmp/pids/.keep
+marketplace_api/tmp/storage/*
+!marketplace_api/tmp/storage/
+!marketplace_api/tmp/storage/.keep
+marketplace_api/storage/*
+!marketplace_api/storage/.keep
+marketplace_api/config/*.key
+marketplace_api/vendor/bundle/
+marketplace_api/.ruby-lsp/
+
+# Rails report files
+marketplace_api/brakeman_report.json
+marketplace_api/rubocop_report.json
+marketplace_api/rspec_report.json
+
+# ========================
+# Frontend
+# ========================
+marketplace_frontend/node_modules/
+marketplace_frontend/lint_report.txt
+
+# ========================
+# IDE / Editor
+# ========================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ========================
+# System / Misc
+# ========================
+.ruby-lsp/

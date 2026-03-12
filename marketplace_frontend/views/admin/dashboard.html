@@ -1,0 +1,474 @@
+<div class="container mt-4">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-12">
+            <h2 class="fw-bold" style="color: var(--jiomart-dark);">Admin Control Center</h2>
+            <p class="text-muted small">Global marketplace management and oversight</p>
+        </div>
+    </div>
+    <!-- Reactivation Requests Alert -->
+    <div class="alert alert-danger border-start border-4 border-danger shadow-lg rounded-4 mb-4 animate-pulse"
+        ng-if="(allSellers | filter:{suspended: true, reactivation_requested: true}).length > 0"
+        style="background-color: #fff5f5;">
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center">
+                <div class="bg-danger text-white rounded-circle p-2 me-3 shadow-sm">
+                    <i class="bi bi-exclamation-octagon-fill fs-4"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-0 text-danger">Action Required: Reactivation Requests Pending</h6>
+                    <small class="text-muted">
+                        Pending review:
+                        <button class="btn btn-link btn-sm p-0 fw-bold text-danger text-decoration-none me-1"
+                            ng-repeat="s in allSellers | filter:{suspended: true, reactivation_requested: true}"
+                            ng-click="sellerSearch.store_name = s.store_name; sellerSearch.onlyReactivation = false; scrollToSellers()">
+                            {{s.store_name}}{{$last ? '' : ', '}}
+                        </button>
+                    </small>
+                </div>
+            </div>
+            <button class="btn btn-danger btn-sm rounded-pill px-4 fw-bold shadow-sm"
+                ng-click="sellerSearch.onlyReactivation = true; sellerSearch.store_name = ''; scrollToSellers()">
+                Filter All Requests
+            </button>
+        </div>
+    </div>
+
+    <!-- Admin Stats -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm p-4 rounded-4 bg-primary text-white">
+                <div class="small fw-bold text-uppercase opacity-75 mb-2">Platform Gross Sales</div>
+                <div class="h2 fw-bold mb-1">₹{{stats.total_revenue || '0'}}</div>
+                <div class="small opacity-75">Gross Merchandise Value</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-4 rounded-4 bg-success text-white">
+                <div class="small fw-bold text-uppercase opacity-75 mb-2">Platform Profit</div>
+                <div class="h2 fw-bold mb-1">₹{{stats.total_platform_profit || '0'}}</div>
+                <div class="small opacity-75">From commissions</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-4 rounded-4 bg-dark text-white">
+                <div class="small fw-bold text-uppercase opacity-75 mb-2">Total Sellers</div>
+                <div class="h2 fw-bold mb-1">{{stats.seller_count || 0}}</div>
+                <div class="small opacity-75">{{stats.pending_seller_approvals || 0}} pending verification</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-4 rounded-4 bg-white border-start border-4 border-info">
+                <div class="small fw-bold text-muted text-uppercase mb-2">Active Categories</div>
+                <div class="h2 fw-bold mb-1 text-info">12</div>
+                <div class="small text-muted">Across 4 main divisions</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Sellers Verification Section Restored -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-5">
+        <div class="p-4 border-bottom bg-white">
+            <h5 class="fw-bold mb-0">Pending Seller Approvals</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr class="small text-uppercase text-muted fw-bold">
+                        <th class="ps-4 py-3">Store Name</th>
+                        <th class="py-3">Owner Email</th>
+                        <th class="py-3">Description</th>
+                        <th class="py-3 text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="seller in allSellers" ng-if="seller.verification_status === 'pending'">
+                        <td class="ps-4 py-3 fw-bold">{{seller.store_name}}</td>
+                        <td class="py-3 text-muted">{{seller.user ? seller.user.email : 'N/A'}}</td>
+                        <td class="py-3 text-truncate" style="max-width: 250px;">{{seller.store_description}}</td>
+                        <td class="py-3 text-end pe-4">
+                            <button class="btn btn-success btn-sm rounded-pill px-3 me-2"
+                                ng-click="approveSeller(seller)">Approve</button>
+                            <button class="btn btn-danger btn-sm rounded-pill px-3"
+                                ng-click="rejectSeller(seller)">Reject</button>
+                        </td>
+                    </tr>
+                    <tr ng-if="(allSellers | filter:{verification_status: 'pending'}).length === 0">
+                        <td colspan="4" class="text-center py-4 text-muted">No pending approvals at the moment.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Active Sellers Management -->
+    <div id="active-sellers-section" class="card border-0 shadow-sm rounded-4 overflow-hidden mb-5">
+        <div class="p-4 border-bottom bg-white d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <h5 class="fw-bold mb-0">Active Sellers</h5>
+            <div class="d-flex align-items-center gap-3">
+                <div class="input-group input-group-sm rounded-pill border overflow-hidden px-3 bg-light"
+                    style="width: 250px;">
+                    <span class="input-group-text bg-transparent border-0 text-muted"><i
+                            class="bi bi-search"></i></span>
+                    <input type="text" class="form-control bg-transparent border-0 ps-0" placeholder="Search stores..."
+                        ng-model="sellerSearch.store_name">
+                </div>
+                <div class="form-check form-switch mb-0">
+                    <input class="form-check-input" type="checkbox" role="switch" id="reactivationFilter"
+                        ng-model="sellerSearch.onlyReactivation">
+                    <label class="form-check-label small fw-bold text-muted" for="reactivationFilter">Requests
+                        Only</label>
+                </div>
+                <button class="btn btn-outline-secondary btn-sm rounded-pill px-3"
+                    ng-if="sellerSearch.store_name || sellerSearch.onlyReactivation"
+                    ng-click="sellerSearch.store_name = ''; sellerSearch.onlyReactivation = false">
+                    <i class="bi bi-x-circle me-1"></i>Clear
+                </button>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr class="small text-uppercase text-muted fw-bold">
+                        <th class="ps-4 py-3">Store Name</th>
+                        <th class="py-3">Owner Email</th>
+                        <th class="py-3">Status</th>
+                        <th class="py-3 text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr
+                        ng-repeat="seller in allSellers | filter:{store_name: sellerSearch.store_name, verification_status: 'approved', reactivation_requested: (sellerSearch.onlyReactivation ? true : undefined)}">
+                        <td class="ps-4 py-3 fw-bold">{{seller.store_name}}</td>
+                        <td class="py-3 text-muted">{{seller.user ? seller.user.email : 'N/A'}}</td>
+                        <td class="py-3">
+                            <span class="badge rounded-pill" ng-class="seller.suspended ? 'bg-danger' : 'bg-success'">
+                                {{seller.suspended ? (seller.reactivation_requested ? 'Reactivation Pending' :
+                                'Suspended') : 'Active'}}
+                            </span>
+                            <span class="badge bg-warning text-dark ms-2 fw-bold"
+                                ng-if="seller.suspended && seller.reactivation_requested">
+                                RE-ACTIVATION REQUESTED
+                            </span>
+                        </td>
+                        <td class="py-3 text-end pe-4">
+                            <button class="btn btn-warning btn-sm rounded-pill px-3 fw-bold text-dark me-2"
+                                ng-if="!seller.suspended" ng-click="suspendSeller(seller)">Suspend</button>
+                            <button class="btn btn-success btn-sm rounded-pill px-3 fw-bold"
+                                ng-if="seller.suspended && !seller.reactivation_requested"
+                                ng-click="reactivateSeller(seller)">Reactivate</button>
+                            <button class="btn btn-success btn-sm rounded-pill px-3 fw-bold position-relative"
+                                ng-if="seller.suspended && seller.reactivation_requested"
+                                ng-click="reactivateSeller(seller)">
+                                Reactivate
+                                <span
+                                    class="position-absolute top-0 start-100 translate-middle p-2 bg-warning border border-light rounded-circle"
+                                    title="Reactivation Requested!">
+                                    <span class="visually-hidden">New alerts</span>
+                                </span>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr ng-if="(allSellers | filter:{verification_status: 'approved'}).length === 0">
+                        <td colspan="4" class="text-center py-4 text-muted">No active sellers found.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Global Product Management -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-5">
+        <div class="p-4 border-bottom bg-white d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0">Global Catalog Management</h5>
+            <div class="d-flex flex-grow-1 justify-content-end align-items-center ms-3">
+                <select class="form-select form-select-sm rounded-pill border-2 w-auto me-3 px-3"
+                    ng-model="searchProduct.category_id" ng-options="cat.id as cat.name for cat in flatCategories">
+                    <option value="">All Categories</option>
+                </select>
+                <div class="input-group input-group-sm w-50 me-3">
+                    <input type="text" class="form-control rounded-pill border-2" placeholder="Search products..."
+                        ng-model="searchProduct.name">
+                </div>
+                <button class="btn btn-primary btn-sm rounded-pill px-3 fw-bold text-nowrap"
+                    ng-click="openAddProduct()">+ Add
+                    Product</button>
+            </div>
+        </div>
+
+        <!-- Admin Add/Edit Product Form -->
+        <div id="adminProductForm" class="p-4 mb-3 border-bottom bg-light ng-hide" ng-show="showingForm">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold mb-0">{{editingProduct.id ? 'Edit' : 'Add New'}} Global Product</h5>
+                <button class="btn-close" ng-click="showingForm = false"></button>
+            </div>
+            <form ng-submit="saveProduct()" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold">Seller</label>
+                    <select class="form-select rounded-3" ng-model="editingProduct.seller_id" required
+                        ng-options="s.id as s.store_name for s in allSellers">
+                        <option value="">Select Seller</option>
+                    </select>
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label small fw-bold">Product Name</label>
+                    <input type="text" class="form-control rounded-3" ng-model="editingProduct.name" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold">Price (₹)</label>
+                    <input type="number" class="form-control rounded-3" ng-model="editingProduct.price" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold">Stock Quantity</label>
+                    <input type="number" class="form-control rounded-3" ng-model="editingProduct.stock_quantity"
+                        required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold">Category</label>
+                    <select class="form-select rounded-3" ng-model="editingProduct.category_id"
+                        ng-options="cat.id as cat.name for cat in flatCategories" required>
+                        <option value="">Select Category</option>
+                    </select>
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label small fw-bold">Description</label>
+                    <textarea class="form-control rounded-3" rows="3" ng-model="editingProduct.description"
+                        required></textarea>
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label small fw-bold">Product Image (Optional)</label>
+                    <input type="file" class="form-control rounded-3" file-model="editingProduct.image"
+                        accept="image/jpeg, image/png, image/webp">
+                    <div class="form-text small mt-1" ng-if="editingProduct.image_url">
+                        <span class="text-success fw-bold">Current Image:</span>
+                        <img ng-src="{{editingProduct.image_url}}" class="rounded ms-2 shadow-sm border"
+                            style="width: 50px; height: 50px; object-fit: cover;">
+                    </div>
+                </div>
+                <div class="col-12 mt-3">
+                    <button type="submit" class="btn btn-primary px-4 py-2 rounded-pill fw-bold">Save Global
+                        Product</button>
+                    <button type="button" class="btn btn-light px-4 py-2 rounded-pill fw-bold ms-2"
+                        ng-click="showingForm = false">Cancel</button>
+                </div>
+            </form>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr class="small text-uppercase text-muted fw-bold">
+                        <th class="ps-4 py-3">Product</th>
+                        <th class="py-3">Seller</th>
+                        <th class="py-3">Price</th>
+                        <th class="py-3">Stock</th>
+                        <th class="py-3 text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="product in allProducts | filter:searchProduct">
+                        <td class="ps-4 py-4">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-light rounded p-1 border shadow-sm me-3"
+                                    style="width: 48px; height: 48px;">
+                                    <img ng-src="{{product.image_url || 'https://dummyimage.com/40x40/dee2e6/6c757d.png&text=No+Img'}}"
+                                        class="w-100 h-100 rounded" style="object-fit: cover;">
+                                </div>
+                                <span class="fw-bold text-dark">{{product.name}}</span>
+                            </div>
+                        </td>
+                        <td class="py-4 text-muted small">{{product.seller.store_name}}</td>
+                        <td class="py-4 fw-bold">₹{{product.price}}</td>
+                        <td class="py-4">
+                            <span
+                                class="badge {{product.stock_quantity > 0 ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'}} rounded-pill px-3">
+                                {{product.stock_quantity}} in stock
+                            </span>
+                        </td>
+                        <td class="py-4 text-end pe-4">
+                            <div class="btn-group">
+                                <a class="btn btn-outline-info btn-sm rounded-start-pill"
+                                    href="#!/products/{{product.id}}">View</a>
+                                <button class="btn btn-outline-secondary btn-sm"
+                                    ng-click="editProduct(product)">Mod</button>
+                                <button class="btn btn-outline-danger btn-sm rounded-end-pill"
+                                    ng-click="deleteProduct(product)">Del</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Global Order Management -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-5">
+        <div class="p-4 border-bottom bg-white d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0">Platform Orders</h5>
+
+            <div class="d-flex align-items-center">
+                <!-- View Type Toggle -->
+                <div class="btn-group btn-group-sm me-3" role="group">
+                    <input type="radio" class="btn-check" name="orderview" id="btnradio1" autocomplete="off"
+                        ng-model="orderFilterConfig.viewType" value="global">
+                    <label class="btn btn-outline-primary fw-bold px-3" for="btnradio1">Global/Date</label>
+
+                    <input type="radio" class="btn-check" name="orderview" id="btnradio2" autocomplete="off"
+                        ng-model="orderFilterConfig.viewType" value="customer">
+                    <label class="btn btn-outline-primary fw-bold px-3" for="btnradio2">Customer</label>
+
+                    <input type="radio" class="btn-check" name="orderview" id="btnradio3" autocomplete="off"
+                        ng-model="orderFilterConfig.viewType" value="seller">
+                    <label class="btn btn-outline-primary fw-bold px-3" for="btnradio3">Shop/Seller</label>
+                </div>
+
+                <!-- dynamic filter dropdowns based on view type -->
+                <select class="form-select form-select-sm rounded-pill w-auto px-3 border-2"
+                    ng-if="orderFilterConfig.viewType === 'customer'" ng-model="orderFilterConfig.customerId">
+                    <option value="">All Customers</option>
+                    <option ng-repeat="buyer in getUniqueBuyers()" value="{{buyer.id}}">{{buyer.email}}</option>
+                </select>
+
+                <select class="form-select form-select-sm rounded-pill w-auto px-3 border-2"
+                    ng-if="orderFilterConfig.viewType === 'seller'" ng-model="orderFilterConfig.sellerId">
+                    <option value="">All Sellers</option>
+                    <option ng-repeat="seller in allSellers" value="{{seller.id}}">{{seller.store_name}}</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="p-0 bg-light">
+            <!-- Iterate over Orders using the filtered function -->
+            <div ng-repeat="order in getFilteredOrders() | orderBy:'-created_at'"
+                class="border-bottom p-4 bg-white mb-2 shadow-sm rounded-3 mx-3 mt-3">
+                <div class="d-flex justify-content-between align-items-start mb-3 border-bottom pb-3">
+                    <div>
+                        <h6 class="fw-bold mb-1 text-primary">Master Order #{{order.id}}</h6>
+                        <div class="small text-muted mb-1"><i class="bi bi-clock me-1"></i> Placed on {{order.created_at
+                            | date:'medium'}}</div>
+                        <div class="small fw-bold text-dark"><i class="bi bi-person-circle me-1"></i> Customer:
+                            {{order.buyer.email}}</div>
+                    </div>
+                    <div class="text-end">
+                        <div class="dropdown mb-2">
+                            <button
+                                class="btn btn-sm btn-outline-dark dropdown-toggle text-uppercase fw-bold rounded-pill px-3 py-2 w-100 mb-1"
+                                type="button" data-bs-toggle="dropdown">
+                                Status: {{order.status}}
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                <li><a class="dropdown-item small py-2 fw-medium" href=""
+                                        ng-click="updateGlobalOrderStatus(order, 'pending')">Pending</a></li>
+                                <li><a class="dropdown-item small py-2 fw-medium" href=""
+                                        ng-click="updateGlobalOrderStatus(order, 'shipped')">Shipped</a></li>
+                                <li><a class="dropdown-item small py-2 fw-medium text-success" href=""
+                                        ng-click="updateGlobalOrderStatus(order, 'delivered')">Delivered</a></li>
+                                <li><a class="dropdown-item small py-2 fw-medium text-danger" href=""
+                                        ng-click="updateGlobalOrderStatus(order, 'cancelled')">Cancelled</a></li>
+                            </ul>
+                        </div>
+                        <div class="dropdown mb-2">
+                            <button
+                                class="btn btn-sm btn-outline-info dropdown-toggle text-uppercase fw-bold rounded-pill px-3 py-2 w-100"
+                                type="button" data-bs-toggle="dropdown">
+                                Payment: {{order.payment_status}}
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                <li><a class="dropdown-item small py-2 fw-medium" href=""
+                                        ng-click="updateGlobalPaymentStatus(order, 'unpaid')">Unpaid/Pending</a></li>
+                                <li><a class="dropdown-item small py-2 fw-medium" href=""
+                                        ng-click="updateGlobalPaymentStatus(order, 'processing')">Processing</a></li>
+                                <li><a class="dropdown-item small py-2 fw-medium text-success" href=""
+                                        ng-click="updateGlobalPaymentStatus(order, 'paid')">Paid</a></li>
+                                <li><a class="dropdown-item small py-2 fw-medium text-danger" href=""
+                                        ng-click="updateGlobalPaymentStatus(order, 'failed')">Failed</a></li>
+                            </ul>
+                        </div>
+                        <div class="fw-bold h5 mb-0" style="color: var(--jiomart-blue);">₹{{order.total_amount || 0}}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grouped Items in Checkouts -->
+                <div class="row">
+                    <div class="col-md-7">
+                        <h6 class="small fw-bold text-muted text-uppercase mb-3">Items in this Order</h6>
+                        <div class="d-flex align-items-center mb-3 bg-light p-2 rounded-3 border"
+                            ng-repeat="item in order.order_items">
+                            <div class="bg-white p-1 rounded border me-3 shadow-sm" style="width: 50px; height: 50px;">
+                                <img ng-src="{{item.product.image_url || 'https://dummyimage.com/50x50/dee2e6/6c757d.png&text=No+Img'}}"
+                                    class="w-100 h-100 rounded" style="object-fit: cover;">
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold text-dark mb-0">{{item.product.name}}</div>
+                                <div class="small text-muted">Qty: {{item.quantity}} × ₹{{item.price_at_purchase}}</div>
+                            </div>
+                            <div class="fw-bold">₹{{item.quantity * item.price_at_purchase}}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-5 border-start">
+                        <h6 class="small fw-bold text-muted text-uppercase mb-3">Delivery Address</h6>
+                        <div class="p-3 bg-light rounded-3 border" ng-if="order.shipping_address">
+                            <div class="fw-bold text-dark mb-1"><i class="bi bi-geo-alt-fill text-danger me-1"></i>
+                                {{order.shipping_address.name}}</div>
+                            <div class="small text-muted mb-1">{{order.shipping_address.street}}</div>
+                            <div class="small text-muted mb-2">{{order.shipping_address.city}},
+                                {{order.shipping_address.state}} {{order.shipping_address.zip}}</div>
+                            <div class="small fw-bold text-dark"><i class="bi bi-telephone-fill me-1"></i>
+                                {{order.shipping_address.phone}}</div>
+                        </div>
+                        <div class="p-3 bg-light rounded-3 border text-muted small text-center"
+                            ng-if="!order.shipping_address">
+                            No delivery address provided.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-5 text-center text-muted" ng-if="getFilteredOrders().length === 0">
+                <h5>No master orders found matching the selected criteria.</h5>
+            </div>
+        </div>
+    </div>
+    <!-- Review Management Section -->
+    <div class="card border-0 shadow-sm rounded-4 mb-5">
+        <div class="p-4 border-bottom bg-white">
+            <h5 class="fw-bold mb-0">Review Management</h5>
+            <p class="text-muted small mb-0">Monitor and moderate customer feedback across the platform</p>
+        </div>
+        <div class="p-4">
+            <div ng-repeat="(catName, reviews) in groupedReviews" class="mb-5">
+                <div class="d-flex align-items-center mb-3">
+                    <span
+                        class="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-2 fw-bold text-uppercase small border">{{catName}}</span>
+                    <hr class="flex-grow-1 ms-3">
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6 col-lg-4" ng-repeat="review in reviews">
+                        <div class="card h-100 border-0 shadow-sm rounded-4 p-3 bg-light">
+                            <div class="d-flex justify-content-between mb-2">
+                                <div class="small fw-bold text-dark">{{review.product.name}}</div>
+                                <div class="text-warning small">
+                                    <i class="bi bi-star-fill"
+                                        ng-repeat="n in [].constructor(review.rating) track by $index"></i>
+                                </div>
+                            </div>
+                            <p class="small text-muted mb-3 flex-grow-1">"{{review.comment}}"</p>
+                            <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top">
+                                <div class="small text-muted">By: {{review.user.email.split('@')[0]}}</div>
+                                <button class="btn btn-outline-danger btn-sm rounded-pill px-3"
+                                    ng-click="deleteReview(review)">
+                                    <i class="bi bi-trash3 me-1"></i>Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div ng-if="allReviews.length === 0" class="text-center py-5 text-muted">
+                <i class="bi bi-chat-left-dots fs-1 d-block mb-3 opacity-25"></i>
+                <p>No reviews found to moderate.</p>
+            </div>
+        </div>
+    </div>
+</div>

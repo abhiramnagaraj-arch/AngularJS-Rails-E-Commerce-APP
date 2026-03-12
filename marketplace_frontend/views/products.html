@@ -1,0 +1,45 @@
+<div class="container mt-4">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8">
+            <h2 class="fw-bold" style="color: var(--jiomart-dark);">Browse Products</h2>
+            <p class="text-muted small">Quality products at best prices</p>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label small fw-bold text-muted text-uppercase">Filter by Category</label>
+            <select class="form-select shadow-sm border-0 rounded-3" ng-model="selectedCategory"
+                ng-change="filterProducts()" ng-options="cat.id as cat.name for cat in categories">
+                <option value="">All Categories</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-6 col-md-4 col-lg-3 mb-4" ng-repeat="product in products">
+            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden product-card">
+                <div style="height: 200px; overflow: hidden; background-color: #f8f9fa;"
+                    class="d-flex align-items-center justify-content-center">
+                    <img ng-src="{{product.image_url || 'https://dummyimage.com/300x300/dee2e6/6c757d.png&text=No+Image'}}"
+                        class="img-fluid w-100 h-100" style="object-fit: cover;" alt="{{product.name}}">
+                </div>
+                <div class="card-body p-2 mt-auto">
+                    <a href="#!/products?category={{product.category.name}}"
+                        class="badge text-bg-secondary text-decoration-none mb-1 d-inline-block">{{product.category.name}}</a>
+                    <h6 class="card-title text-truncate mb-1 fw-bold">{{product.name}}</h6>
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="fs-5 fw-bold text-dark">₹{{product.price}}</span>
+                    </div>
+                </div>
+                <div class="d-grid gap-2">
+                    <a href="#!/products/{{product.id}}"
+                        class="btn btn-outline-primary btn-sm rounded-pill fw-bold">Details</a>
+                    <button class="btn btn-primary btn-sm rounded-pill fw-bold" ng-click="addToCart(product)">Add to
+                        Cart</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 text-center py-5" ng-show="products.length == 0">
+            <h5 class="text-muted">No products found in this category.</h5>
+            <button class="btn btn-primary mt-3" ng-click="selectedCategory=''; filterProducts()">Clear Filters</button>
+        </div>
+    </div>
+</div>
