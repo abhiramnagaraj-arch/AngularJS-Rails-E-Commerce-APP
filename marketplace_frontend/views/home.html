@@ -1,8 +1,130 @@
-<div class="container mt-5 text-center">
-    <h1>Welcome to the Multi-Vendor Marketplace</h1>
-    <p class="lead">Find products from your favorite sellers or start your own store!</p>
-    <div class="mt-4">
-        <a href="#!/products" class="btn btn-primary btn-lg">Browse Products</a>
-        <a href="#!/signup" class="btn btn-outline-secondary btn-lg" ng-hide="isLoggedIn">Join Now</a>
+<!-- COSMIC HERO SECTION -->
+<section class="cosmic-hero">
+  <div class="hero-content">
+    <!-- 3D Rotating Ring -->
+    <div class="hero-ring-container">
+      <div class="hero-ring hero-ring-1"></div>
+      <div class="hero-ring hero-ring-2"></div>
     </div>
-</div>
+
+    <!-- Floating Offer Pills -->
+    <div class="hero-pills">
+      <span class="offer-pill offer-pill-1">🔥 50% Off Electronics</span>
+      <span class="offer-pill offer-pill-2">🛒 Free Delivery</span>
+      <span class="offer-pill offer-pill-3">⭐ Top Rated Sellers</span>
+      <span class="offer-pill offer-pill-4">💎 Premium Quality</span>
+      <span class="offer-pill offer-pill-5">🎁 Daily Deals</span>
+    </div>
+
+    <!-- Hero Text -->
+    <div class="hero-text-block">
+      <p class="hero-eyebrow">✦ MULTI-VENDOR MARKETPLACE</p>
+      <h1 class="hero-title">
+        Discover<br>
+        <span class="hero-title-gradient">Extraordinary</span><br>
+        Products
+      </h1>
+      <p class="hero-subtitle">
+        Shop from hundreds of curated sellers. Premium quality,<br class="d-none d-md-inline">
+        unbeatable prices, and lightning-fast delivery.
+      </p>
+
+      <!-- CTA Buttons -->
+      <div class="hero-cta-group">
+        <a href="#!/products" class="btn btn-primary btn-lg hero-cta-primary" id="hero-magnetic-btn">
+          <span class="hero-cta-text">Browse Products</span>
+          <span class="hero-cta-arrow">→</span>
+        </a>
+        <a href="#!/signup" class="btn btn-outline-primary btn-lg hero-cta-secondary rounded-pill" ng-hide="isLoggedIn">
+          Join Now
+        </a>
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <span class="hero-stat-number">500+</span>
+        <span class="hero-stat-label">Products</span>
+      </div>
+      <div class="hero-stat-divider"></div>
+      <div class="hero-stat">
+        <span class="hero-stat-number">100+</span>
+        <span class="hero-stat-label">Sellers</span>
+      </div>
+      <div class="hero-stat-divider"></div>
+      <div class="hero-stat">
+        <span class="hero-stat-number">10K+</span>
+        <span class="hero-stat-label">Happy Customers</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scroll Indicator -->
+  <div class="scroll-indicator">
+    <div class="scroll-indicator-dot"></div>
+  </div>
+</section>
+
+<!-- CATEGORY STRIP -->
+<section class="container mt-5">
+  <div class="section-header animate-on-scroll">
+    <p class="section-eyebrow">✦ SHOP BY CATEGORY</p>
+    <h2 class="section-title">Explore Categories</h2>
+  </div>
+
+  <div class="category-scroll-row">
+    <a href="#!/products?category=Electronics" class="category-card animate-on-scroll">
+      <div class="category-icon">⚡</div>
+      <span class="category-name">Electronics</span>
+    </a>
+    <a href="#!/products?category=Fashion" class="category-card animate-on-scroll">
+      <div class="category-icon">👗</div>
+      <span class="category-name">Fashion</span>
+    </a>
+    <a href="#!/products?category=Groceries" class="category-card animate-on-scroll">
+      <div class="category-icon">🥑</div>
+      <span class="category-name">Groceries</span>
+    </a>
+    <a href="#!/products?category=Home" class="category-card animate-on-scroll">
+      <div class="category-icon">🏠</div>
+      <span class="category-name">Home & Kitchen</span>
+    </a>
+    <a href="#!/products" class="category-card animate-on-scroll">
+      <div class="category-icon">🛍️</div>
+      <span class="category-name">All Products</span>
+    </a>
+  </div>
+</section>
+
+<!-- FEATURED SECTION -->
+<section class="container mt-5 mb-5">
+  <div class="section-header animate-on-scroll">
+    <p class="section-eyebrow">✦ WHY CHOOSE US</p>
+    <h2 class="section-title">The Cosmic Advantage</h2>
+  </div>
+
+  <div class="row g-4 stagger-children">
+    <div class="col-md-4">
+      <div class="feature-card animate-on-scroll">
+        <div class="feature-icon">🚀</div>
+        <h5 class="feature-title">Lightning Fast Delivery</h5>
+        <p class="feature-desc">Get your orders delivered at warp speed. Same-day delivery available in select cities.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="feature-card animate-on-scroll">
+        <div class="feature-icon">🛡️</div>
+        <h5 class="feature-title">Secure Payments</h5>
+        <p class="feature-desc">Multiple payment options with UPI, cards, and COD. Powered by Razorpay for maximum security.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="feature-card animate-on-scroll">
+        <div class="feature-icon">⭐</div>
+        <h5 class="feature-title">Verified Sellers</h5>
+        <p class="feature-desc">Every seller is vetted and approved by our team. Quality guaranteed or your money back.</p>
+      </div>
+    </div>
+  </div>
+</section>

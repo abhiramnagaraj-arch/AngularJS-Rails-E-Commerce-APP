@@ -1,4 +1,4 @@
-const app = angular.module("marketplaceApp", ["ngRoute"]);
+const app = angular.module("marketplaceApp", ["ngRoute", "ngAnimate"]);
 
 const API_BASE = "http://localhost:3000/api/v1";
 
@@ -217,7 +217,7 @@ app.controller("SignupController", function ($scope, $http, $location, $rootScop
 });
 
 app.controller("ProductsController", function ($scope, $http, $rootScope, AuthService, $routeParams, $location) {
-  $scope.products = [];
+  $scope.products = null;
   $scope.categories = [];
   $scope.selectedCategory = "";
   $scope.searchQuery = $routeParams.query || "";
@@ -242,6 +242,7 @@ app.controller("ProductsController", function ($scope, $http, $rootScope, AuthSe
         $scope.selectedCategory = found.id;
       }
     }
+  }).finally(() => {
     fetchProducts();
   });
 
@@ -253,6 +254,7 @@ app.controller("ProductsController", function ($scope, $http, $rootScope, AuthSe
     } else {
       $location.search('category', null);
     }
+    fetchProducts();
   };
 
   $scope.addToCart = function (product) {
@@ -721,26 +723,76 @@ app.controller("AdminController", function ($scope, $http) {
   $scope.showingForm = false;
   $scope.editingProduct = {};
   $scope.allReviews = [];
+  $scope.groupedOrders = {};
   $scope.sellerSearch = { store_name: '', onlyReactivation: false };
 
   $scope.orderFilterConfig = {
-    viewType: 'global', // 'global', 'customer', 'seller'
+    viewType: 'global',
     customerId: '',
-    sellerId: ''
+    sellerId: '',
+    timeRange: 'all'
+  };
+
+  $scope.getFilteredOrders = function () {
+    if (!$scope.allOrders) return [];
+    let orders = [...$scope.allOrders];
+
+    // 1. Time-based filtering
+    if ($scope.orderFilterConfig.timeRange !== 'all') {
+      const now = new Date();
+      let threshold;
+      if ($scope.orderFilterConfig.timeRange === '24h') threshold = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+      else if ($scope.orderFilterConfig.timeRange === '7d') threshold = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+      else if ($scope.orderFilterConfig.timeRange === '30d') threshold = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+
+      if (threshold) {
+        orders = orders.filter(o => new Date(o.created_at) >= threshold);
+      }
+    }
+
+    // 2. View type and ID filtering
+    if ($scope.orderFilterConfig.viewType === 'customer' && $scope.orderFilterConfig.customerId) {
+      orders = orders.filter(o => String(o.buyer_id) === String($scope.orderFilterConfig.customerId));
+    }
+
+    if ($scope.orderFilterConfig.viewType === 'seller' && $scope.orderFilterConfig.sellerId) {
+      orders = orders.map(o => {
+        const filteredItems = o.order_items.filter(item => item.product && String(item.product.seller_id) === String($scope.orderFilterConfig.sellerId));
+        return filteredItems.length > 0 ? { ...o, order_items: filteredItems } : null;
+      }).filter(o => o !== null);
+    }
+
+    // 3. Absolute sorting by Newest First
+    return orders.sort((a, b) => (b.id || 0) - (a.id || 0));
+  };
+
+  $scope.groupOrdersByStatus = function() {
+    if (!$scope.allOrders) return;
+    const filtered = $scope.getFilteredOrders();
+    
+    // We use an array of objects to guarantee the UI order
+    $scope.groupedOrders = [
+      { id: 'pending', label: 'PENDING TRANSMISSIONS', items: filtered.filter(o => o.status === 'pending') },
+      { id: 'paid', label: 'READY FOR DISPATCH', items: filtered.filter(o => o.status === 'paid') },
+      { id: 'shipped', label: 'ACTIVE SHIPMENTS', items: filtered.filter(o => o.status === 'shipped') },
+      { id: 'delivered', label: 'COMPLETED DELIVERIES', items: filtered.filter(o => o.status === 'delivered') },
+      { id: 'cancelled', label: 'CANCELLED/FAILED', items: filtered.filter(o => o.status === 'cancelled' || o.status === 'failed') },
+      { id: 'unclassified', label: 'MISCELLANEOUS SIGNAL', items: filtered.filter(o => !['pending', 'paid', 'shipped', 'delivered', 'cancelled', 'failed'].includes(o.status)) }
+    ];
   };
 
   $scope.getFilteredOrders = function () {
     if (!$scope.allOrders) return [];
     let orders = $scope.allOrders;
 
+    // View type filtering
     if ($scope.orderFilterConfig.viewType === 'customer' && $scope.orderFilterConfig.customerId) {
-      orders = orders.filter(o => o.buyer_id === parseInt($scope.orderFilterConfig.customerId));
+      orders = orders.filter(o => String(o.buyer_id) === String($scope.orderFilterConfig.customerId));
     }
 
     if ($scope.orderFilterConfig.viewType === 'seller' && $scope.orderFilterConfig.sellerId) {
-      // Filter out orders that don't belong to the seller, and modify the items list
       orders = orders.map(o => {
-        const filteredItems = o.order_items.filter(item => item.product.seller_id === parseInt($scope.orderFilterConfig.sellerId));
+        const filteredItems = o.order_items.filter(item => String(item.product.seller_id) === String($scope.orderFilterConfig.sellerId));
         if (filteredItems.length > 0) {
           return { ...o, order_items: filteredItems };
         }
@@ -748,8 +800,24 @@ app.controller("AdminController", function ($scope, $http) {
       }).filter(o => o !== null);
     }
 
+    // Time-based filtering
+    if ($scope.orderFilterConfig.timeRange !== 'all') {
+      const now = new Date();
+      let threshold;
+      if ($scope.orderFilterConfig.timeRange === '24h') threshold = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+      else if ($scope.orderFilterConfig.timeRange === '7d') threshold = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+      else if ($scope.orderFilterConfig.timeRange === '30d') threshold = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+
+      if (threshold) {
+        orders = orders.filter(o => new Date(o.created_at) >= threshold);
+      }
+    }
+
     return orders;
   };
+
+  // Reactive grouping
+  $scope.$watchCollection('orderFilterConfig', () => $scope.groupOrdersByStatus());
 
   $scope.getUniqueBuyers = function () {
     if (!$scope.allOrders) return [];
@@ -787,7 +855,12 @@ app.controller("AdminController", function ($scope, $http) {
     });
 
     // Fetch Global Orders
-    $http.get(`${API_BASE}/admin/orders`).then(res => $scope.allOrders = res.data);
+    $http.get(`${API_BASE}/admin/orders`).then(res => {
+      $scope.allOrders = res.data;
+      $scope.groupOrdersByStatus();
+    });
+
+    // Orders already grouped via watch/init
 
     // Fetch categories for the dropdown
     $http.get(`${API_BASE}/categories`).then(res => {

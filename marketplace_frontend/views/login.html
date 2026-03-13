@@ -1,57 +1,176 @@
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-5 card border-0 shadow-lg p-4 rounded-4" style="background: white;">
-            <div class="text-center mb-4">
-                <h2 style="color: #008ecc; font-weight: 800;">Welcome to JioMart</h2>
-                <p class="text-muted">Select your role to continue</p>
-            </div>
+<div class="auth-wrapper d-flex align-items-center justify-content-center">
+    <!-- Background Blobs -->
+    <div class="auth-blob blob-1"></div>
+    <div class="auth-blob blob-2"></div>
 
-            <!-- Role Selection Buttons -->
-            <div class="d-grid gap-3 mb-4">
-                <button class="btn btn-outline-primary py-3 rounded-pill fw-bold border-2"
-                    ng-class="{'btn-primary text-white shadow-sm': credentials.role === 'buyer'}"
-                    ng-click="setRole('buyer')">
-                    Login as Buyer
-                </button>
-                <div class="row g-2">
-                    <div class="col-6">
-                        <button class="btn btn-outline-info w-100 py-2 rounded-pill fw-bold border-2"
-                            ng-class="{'btn-info text-white shadow-sm': credentials.role === 'seller'}"
-                            ng-click="setRole('seller')">
-                            Seller
-                        </button>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-5">
+                <div class="card bg-glass border-glow p-4 p-md-5 rounded-4 auth-card animate-on-scroll">
+                    <div class="text-center mb-5">
+                        <div class="auth-icon-circle mb-3 mx-auto">
+                            <i class="bi bi-shield-lock fs-2"></i>
+                        </div>
+                        <h2 class="hero-title-gradient fw-bold mb-2">Cosmic Access</h2>
+                        <p class="text-muted small text-uppercase letter-spacing-2">Identity Verification Required</p>
                     </div>
-                    <div class="col-6">
-                        <button class="btn btn-outline-dark w-100 py-2 rounded-pill fw-bold border-2"
-                            ng-class="{'btn-dark text-white shadow-sm': credentials.role === 'admin'}"
-                            ng-click="setRole('admin')">
-                            Admin
+
+                    <!-- Role Selection -->
+                    <div class="role-selector mb-5">
+                        <p class="x-small fw-bold text-muted text-center text-uppercase mb-3">Select your dimension</p>
+                        <div class="d-grid gap-2 mb-3">
+                            <button class="btn btn-outline-primary py-3 rounded-pill fw-bold role-btn transition-smooth"
+                                ng-class="{'active-role shadow-glow': credentials.role === 'buyer'}"
+                                ng-click="setRole('buyer')">
+                                <i class="bi bi-person-circle me-2"></i>Login as Buyer
+                            </button>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <button class="btn btn-outline-info w-100 py-3 rounded-pill fw-bold role-btn transition-smooth"
+                                    ng-class="{'active-role shadow-glow-info': credentials.role === 'seller'}"
+                                    ng-click="setRole('seller')">
+                                    <i class="bi bi-shop me-2"></i>Seller
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-outline-dark w-100 py-3 rounded-pill fw-bold role-btn transition-smooth"
+                                    ng-class="{'active-role shadow-glow-white': credentials.role === 'admin'}"
+                                    ng-click="setRole('admin')">
+                                    <i class="bi bi-gear-fill me-2"></i>Admin
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Login Form -->
+                    <form ng-submit="login()" ng-show="credentials.role" class="stagger-children">
+                        <div class="mb-4 animate-on-scroll">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase mb-2">Quantum Email</label>
+                            <div class="input-group-glass">
+                                <input type="email" class="form-control" ng-model="credentials.email"
+                                    placeholder="your@address.gs" required>
+                                <div class="input-glow"></div>
+                            </div>
+                        </div>
+                        <div class="mb-5 animate-on-scroll">
+                            <label class="form-label x-small fw-bold text-muted text-uppercase mb-2">Security Key</label>
+                            <div class="input-group-glass">
+                                <input type="password" class="form-control" ng-model="credentials.password"
+                                    placeholder="••••••••" required>
+                                <div class="input-glow"></div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg w-100 py-3 fw-bold text-uppercase rounded-pill pulse-glow animate-on-scroll">
+                            Initialize Login: {{credentials.role}}
                         </button>
+                    </form>
+
+                    <div class="mt-5 text-center text-muted small animate-on-scroll">
+                        New to the dimension? <a href="#!/signup" class="text-primary fw-bold text-decoration-none ms-1">Registry Create</a>
                     </div>
                 </div>
-            </div>
-
-            <form ng-submit="login()" ng-show="credentials.role">
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Email Address</label>
-                    <input type="email" class="form-control rounded-3" ng-model="credentials.email"
-                        placeholder="name@example.com" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Password</label>
-                    <input type="password" class="form-control rounded-3" ng-model="credentials.password"
-                        placeholder="Enter password" required>
-                </div>
-                <button type="submit" class="btn btn-primary w-100 py-2 fw-bold text-uppercase rounded-pill"
-                    style="background-color: #008ecc; border: none;">
-                    Login as {{credentials.role | uppercase}}
-                </button>
-            </form>
-
-            <div class="mt-4 text-center">
-                New to JioMart? <a href="#!/signup"
-                    style="color: #008ecc; text-decoration: none; font-weight: bold;">Create Account</a>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    .auth-wrapper {
+        min-height: 85vh;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .auth-blob {
+        position: absolute;
+        width: 400px;
+        height: 400px;
+        background: var(--primary-glow);
+        filter: blur(80px);
+        border-radius: 50%;
+        z-index: 0;
+        opacity: 0.15;
+        animation: blob-float 20s infinite alternate;
+    }
+
+    .blob-1 { top: -100px; left: -100px; background: var(--primary); }
+    .blob-2 { bottom: -100px; right: -100px; background: #9b6fff; }
+
+    @keyframes blob-float {
+        from { transform: translate(0, 0) scale(1); }
+        to { transform: translate(100px, 50px) scale(1.2); }
+    }
+
+    .auth-card {
+        z-index: 1;
+        position: relative;
+    }
+
+    .auth-icon-circle {
+        width: 70px;
+        height: 70px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--border-subtle);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary);
+        box-shadow: 0 0 20px rgba(79, 142, 247, 0.1);
+    }
+
+    .role-btn {
+        background: rgba(255,255,255,0.02);
+        border-color: var(--border-subtle);
+        color: var(--text-muted);
+    }
+
+    .active-role {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+        color: white !important;
+    }
+
+    .shadow-glow { box-shadow: 0 0 20px rgba(79, 142, 247, 0.4); }
+    .shadow-glow-info { box-shadow: 0 0 20px rgba(13, 202, 240, 0.4); }
+    .shadow-glow-white { box-shadow: 0 0 20px rgba(255, 255, 255, 0.2); }
+
+    .input-group-glass {
+        position: relative;
+    }
+
+    .input-group-glass input {
+        background: rgba(255,255,255,0.03) !important;
+        border: 1px solid var(--border-subtle) !important;
+        color: white !important;
+        padding: 12px 16px;
+        border-radius: 12px !important;
+        transition: all 0.3s ease;
+    }
+
+    .input-group-glass input:focus {
+        border-color: var(--primary) !important;
+        box-shadow: none !important;
+    }
+
+    .input-glow {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        border-radius: 12px;
+        box-shadow: 0 0 15px var(--primary-glow);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .input-group-glass input:focus + .input-glow {
+        opacity: 1;
+    }
+
+    .x-small { font-size: 0.75rem; }
+    .letter-spacing-2 { letter-spacing: 2px; }
+</style>

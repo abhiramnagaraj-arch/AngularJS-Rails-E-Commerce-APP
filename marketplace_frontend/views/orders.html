@@ -1,78 +1,159 @@
-<div class="container mt-4">
-    <h2>My Orders</h2>
-    <div ng-if="orders.length === 0" class="alert alert-info mt-3">
-        You haven't placed any orders yet.
+<div class="container mt-4 mb-5">
+    <div class="section-header animate-on-scroll">
+        <p class="section-eyebrow mb-1">✦ PURCHASE HISTORY</p>
+        <h2 class="section-title mb-4">My Orders</h2>
     </div>
 
-    <div class="row mt-4">
-        <div class="col-md-12" ng-repeat="order in orders | orderBy:'-created_at'">
-            <div class="card mb-4 shadow-sm">
-                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+    <!-- Empty Orders State -->
+    <div ng-if="orders.length === 0" class="empty-cosmic-box p-5 rounded-4 border bg-glass text-center animate-on-scroll">
+        <div class="fs-1 mb-4">📜</div>
+        <h4 class="text-white">A new galaxy awaits!</h4>
+        <p class="text-muted">You haven't placed any orders yet. Start your journey today.</p>
+        <a href="#!/products" class="btn btn-outline-primary btn-lg rounded-pill px-5 fw-bold mt-2 shadow-sm">Explore Marketplace</a>
+    </div>
+
+    <!-- Orders Timeline -->
+    <div class="orders-timeline stagger-children">
+        <div class="order-chronicle mb-5 position-relative animate-on-scroll" ng-repeat="order in orders | orderBy:'-created_at'">
+            <!-- Timeline Marker -->
+            <div class="timeline-marker"></div>
+
+            <div class="card bg-glass border-subtle overflow-hidden rounded-4">
+                <!-- Order Header -->
+                <div class="card-header bg-white-5 border-subtle p-3 p-md-4 d-flex justify-content-between align-items-center">
                     <div>
-                        <strong>Order #{{order.id}}</strong>
-                        <span class="text-muted ms-2">{{order.created_at | date:'medium'}}</span>
-                    </div>
-                    <div>
-                        <span class="badge bg-primary fs-6">{{order.status | uppercase}}</span>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <table class="table table-borderless mb-0">
-                        <thead>
-                            <tr>
-                                <th>Product</th>
-                                <th>Price</th>
-                                <th>Qty</th>
-                                <th>Status</th>
-                                <th>Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr ng-repeat="item in order.order_items">
-                                <td class="d-flex align-items-center">
-                                    <div class="bg-light p-2 rounded me-3 shadow-sm border"
-                                        style="width: 60px; height: 60px;">
-                                        <img ng-src="{{item.product.image_url || 'https://dummyimage.com/60x60/dee2e6/6c757d.png&text=No+Img'}}"
-                                            class="w-100 h-100 rounded" style="object-fit: cover;">
-                                    </div>
-                                    <span class="ms-2">{{item.product.name}}</span>
-                                </td>
-                                <td>₹{{item.price_at_purchase}}</td>
-                                <td>{{item.quantity}}</td>
-                                <td>
-                                    <span
-                                        class="badge {{item.status === 'delivered' ? 'bg-success' : (item.status === 'shipped' ? 'bg-info' : 'bg-secondary')}} rounded-pill">
-                                        {{item.status || 'pending' | uppercase}}
-                                    </span>
-                                </td>
-                                <td><strong>₹{{item.price_at_purchase * item.quantity}}</strong></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <!-- Delivery info moved out of outside the card -->
-                <div class="card-footer bg-white border-top-0 d-flex justify-content-between align-items-center p-4">
-                    <div class="small w-50 pe-3 border-end">
-                        <strong class="text-uppercase text-muted d-block mb-2">Delivery & Order Details</strong>
-                        <div ng-if="order.shipping_address">
-                            <span class="fw-bold">{{order.shipping_address.name}}</span><br>
-                            {{order.shipping_address.street}}, {{order.shipping_address.city}}<br>
-                            {{order.shipping_address.state}}, {{order.shipping_address.zip}}<br>
-                            Phone: {{order.shipping_address.phone}}
-                        </div>
-                        <div ng-if="!order.shipping_address" class="text-muted fst-italic">
-                            No delivery address provided.
-                        </div>
-                        <div class="mt-2 text-primary fw-bold">
-                            <i class="bi bi-credit-card me-1"></i> Payment: {{order.payment_method || 'Online'}}
-                        </div>
+                        <span class="text-muted x-small text-uppercase letter-spacing-1 d-block mb-1">Order Identifier</span>
+                        <h5 class="mb-0 text-white fw-bold">#{{order.id}}</h5>
                     </div>
                     <div class="text-end">
-                        <h5 class="mb-0 text-dark">Order Total</h5>
-                        <h3 class="fw-bold mb-0" style="color: var(--jiomart-blue);">₹{{order.total_amount}}</h3>
+                        <span class="text-muted x-small text-uppercase letter-spacing-1 d-block mb-1">Quantum Date</span>
+                        <span class="text-white small fw-bold">{{order.created_at | date:'medium'}}</span>
+                    </div>
+                    <div class="ms-3 d-none d-md-block">
+                        <span class="badge rounded-pill px-3 py-2 status-badge-glow" 
+                              ng-class="{'bg-primary': order.status === 'pending', 'bg-success': order.status === 'delivered', 'bg-info': order.status === 'shipped'}">
+                            {{order.status | uppercase}}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Order Body (Items List) -->
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-borderless align-middle mb-0 bg-transparent">
+                            <thead class="bg-white-2">
+                                <tr class="x-small text-uppercase text-muted fw-bold">
+                                    <th class="ps-4 py-3">Artifact</th>
+                                    <th class="py-3">Value</th>
+                                    <th class="py-3 text-center">Qty</th>
+                                    <th class="py-3">Status</th>
+                                    <th class="py-3 text-end pe-4">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="item in order.order_items" class="border-bottom border-white-5">
+                                    <td class="ps-4 py-4">
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-white-5 p-2 rounded-3 me-3 border border-subtle" style="width: 60px; height: 60px;">
+                                                <img ng-src="{{item.product.image_url || 'https://dummyimage.com/60x60/dee2e6/6c757d.png&text=No+Img'}}"
+                                                    class="w-100 h-100 rounded" style="object-fit: cover;">
+                                            </div>
+                                            <span class="fw-bold text-white">{{item.product.name}}</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-4 text-muted">₹{{item.price_at_purchase}}</td>
+                                    <td class="py-4 text-center text-white">{{item.quantity}}</td>
+                                    <td class="py-4">
+                                        <span class="badge x-small px-2 py-1 rounded-pill"
+                                            ng-class="item.status === 'delivered' ? 'bg-success' : (item.status === 'shipped' ? 'bg-info' : 'bg-secondary')">
+                                            {{item.status || 'pending' | uppercase}}
+                                        </span>
+                                    </td>
+                                    <td class="py-4 text-end pe-4 fw-bold text-white">₹{{item.price_at_purchase * item.quantity}}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Order Footer (Details & Summary) -->
+                <div class="card-footer bg-white-2 border-0 p-4">
+                    <div class="row g-4 align-items-center">
+                        <div class="col-md-7 border-md-end border-subtle pe-md-4">
+                            <div class="row">
+                                <div class="col-sm-6 mb-3 mb-sm-0">
+                                    <p class="x-small text-muted text-uppercase letter-spacing-1 mb-2">Delivery Protocol</p>
+                                    <div ng-if="order.shipping_address" class="small text-white-75">
+                                        <p class="fw-bold text-white mb-1">{{order.shipping_address.name}}</p>
+                                        <p class="mb-1">{{order.shipping_address.street}}, {{order.shipping_address.city}}</p>
+                                        <p class="mb-1">{{order.shipping_address.state}}, {{order.shipping_address.zip}}</p>
+                                        <p class="mb-0 fw-bold opacity-100"><i class="bi bi-telephone me-2"></i>{{order.shipping_address.phone}}</p>
+                                    </div>
+                                    <div ng-if="!order.shipping_address" class="text-muted fst-italic small">
+                                        No destination provided.
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <p class="x-small text-muted text-uppercase letter-spacing-1 mb-2">Transaction Intel</p>
+                                    <div class="d-flex align-items-center text-primary-glow">
+                                        <i class="bi bi-credit-card-2-front fs-4 me-2"></i>
+                                        <div>
+                                            <span class="fw-bold d-block small">Method: {{order.payment_method || 'Online'}}</span>
+                                            <span class="x-small text-muted text-uppercase">Processed Securedly</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-5 text-md-end">
+                            <p class="x-small text-muted text-uppercase letter-spacing-2 mb-1">Final Quantum Sum</p>
+                            <h2 class="price-tag mb-0">₹{{order.total_amount}}</h2>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    .orders-timeline {
+        border-start-inherit: 2px solid rgba(255,255,255,0.05); /* Placeholder for vertical line logic if needed */
+    }
+    .order-chronicle {
+        margin-left: 20px;
+    }
+    .timeline-marker {
+        position: absolute;
+        left: -32px;
+        top: 25px;
+        width: 12px;
+        height: 12px;
+        background: var(--primary);
+        border-radius: 50%;
+        box-shadow: 0 0 15px var(--primary-glow);
+    }
+    .order-chronicle::before {
+        content: '';
+        position: absolute;
+        left: -27px;
+        top: 37px;
+        bottom: -60px;
+        width: 2px;
+        background: rgba(255,255,255,0.05);
+    }
+    .order-chronicle:last-child::before {
+        display: none;
+    }
+    .status-badge-glow {
+        box-shadow: 0 0 15px currentColor;
+    }
+    .bg-white-2 { background: rgba(255,255,255,0.02); }
+    .bg-white-5 { background: rgba(255,255,255,0.05); }
+    .text-white-75 { color: rgba(255,255,255,0.75); }
+    .text-primary-glow { color: var(--primary); text-shadow: 0 0 8px var(--primary-glow); }
+    .border-md-end { border-right: none; }
+    @media (min-width: 768px) {
+        .border-md-end { border-right: 1px solid var(--border-subtle) !important; }
+    }
+</style>
