@@ -64,9 +64,22 @@
                             </a>
                         </div>
                         <div class="col-8">
-                            <button class="btn btn-primary btn-sm w-100 fw-bold rounded-3 py-2" ng-click="addToCart(product)">
+                            <button class="btn btn-primary btn-sm w-100 fw-bold rounded-3 py-2" ng-click="addToCart(product)" ng-if="getCartQuantity(product.id) === 0">
                                 Add to Cart
                             </button>
+                            <div class="qty-control d-flex align-items-center justify-content-between rounded-3 border border-primary px-2 py-1" ng-if="getCartQuantity(product.id) > 0">
+                                <button class="btn btn-sm btn-link text-primary p-0" ng-click="decreaseQuantity(product)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-dash" viewBox="0 0 16 16">
+                                      <path d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8z"/>
+                                    </svg>
+                                </button>
+                                <span class="fw-bold text-white">{{getCartQuantity(product.id)}}</span>
+                                <button class="btn btn-sm btn-link text-primary p-0" ng-click="increaseQuantity(product)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus" viewBox="0 0 16 16">
+                                      <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

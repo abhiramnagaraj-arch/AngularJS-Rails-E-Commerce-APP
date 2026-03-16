@@ -63,7 +63,7 @@ app.config(function ($routeProvider) {
 });
 
 // Main Controller
-app.controller("MainController", function ($scope, $location, AuthService, $http) {
+app.controller("MainController", function ($scope, $location, AuthService, $http, CartService) {
   $scope.isLoggedIn = AuthService.isLoggedIn();
   $scope.currentUser = AuthService.getUser();
   $scope.cartCount = 0;
@@ -99,11 +99,161 @@ app.controller("MainController", function ($scope, $location, AuthService, $http
   $scope.$on("authChanged", function () {
     $scope.isLoggedIn = AuthService.isLoggedIn();
     $scope.currentUser = AuthService.getUser();
+    if ($scope.isLoggedIn) {
+      CartService.fetchCart();
+    } else {
+      $scope.cartCount = 0;
+    }
   });
 
-  $scope.$on("cartUpdated", function (event, count) {
-    $scope.cartCount = count;
+  $scope.$on("cartUpdated", function (event, data) {
+    $scope.cartCount = typeof data === 'object' ? data.count : data;
   });
+
+  // Initial fetch
+  if ($scope.isLoggedIn) {
+    CartService.fetchCart();
+  }
+});
+
+app.factory("CartService", function ($http, $rootScope, AuthService) {
+  let cartItems = [];
+  let cartQuantities = {};
+  let lastUpdateTimestamp = 0;
+
+  const updateCartData = (data, timestamp = 0) => {
+    if (timestamp > 0 && timestamp < lastUpdateTimestamp) return;
+    if (timestamp > 0) lastUpdateTimestamp = timestamp;
+
+    const rawItems = data.cart_items || (Array.isArray(data) ? data : []);
+    
+    // Deduplicate by product_id and standardize IDs
+    const seen = new Set();
+    cartItems = [];
+    rawItems.forEach(item => {
+      const pid = parseInt(item.product_id);
+      if (pid && !seen.has(pid)) {
+        seen.add(pid);
+        item.product_id = pid; // Standardize
+        cartItems.push(item);
+      }
+    });
+    
+    cartQuantities = {};
+    cartItems.forEach(item => {
+      cartQuantities[item.product_id] = item.quantity;
+    });
+
+    const unifiedData = { cart_items: [...cartItems] };
+    $rootScope.$broadcast("cartUpdated", { 
+      count: cartItems.length, 
+      items: cartItems,
+      fullData: unifiedData 
+    });
+  };
+
+  const getCartItemByProductId = (productId) => {
+    const id = parseInt(productId);
+    return cartItems.find(item => parseInt(item.product_id) === id);
+  };
+
+  return {
+    fetchCart: function (timestamp = 0) {
+      if (!AuthService.isLoggedIn()) {
+        updateCartData([], timestamp);
+        return;
+      }
+      $http.get(`${API_BASE}/cart`).then(res => {
+        updateCartData(res.data, timestamp);
+      });
+    },
+    getQuantity: function (productId) {
+      return cartQuantities[productId] || 0;
+    },
+    addItem: function (product, quantity = 1) {
+      if (!AuthService.isLoggedIn()) return;
+      
+      const now = Date.now();
+      lastUpdateTimestamp = now;
+
+      // Optimistic Update
+      const existing = getCartItemByProductId(product.id);
+      if (existing) {
+        existing.quantity += quantity;
+      } else {
+        // Use a stable structure similar to server response
+        cartItems.push({ 
+          id: 'temp-' + now, 
+          product_id: product.id, 
+          quantity: quantity, 
+          product: product 
+        });
+      }
+      updateCartData(cartItems, now);
+
+      return $http.post(`${API_BASE}/cart/add_item`, { product_id: product.id, quantity: quantity })
+        .then(res => {
+          updateCartData(res.data, now);
+          return res.data;
+        }).catch(err => {
+          this.fetchCart(); // Rollback on error
+          throw err;
+        });
+    },
+    updateQuantity: function (productId, quantity) {
+      if (!AuthService.isLoggedIn()) return;
+      const item = getCartItemByProductId(productId);
+      
+      if (!item) {
+        if (quantity > 0) return this.addItem({ id: productId }, quantity);
+        return;
+      }
+      
+      if (quantity <= 0) return this.removeItem(productId);
+
+      const now = Date.now();
+      lastUpdateTimestamp = now;
+
+      // Optimistic Update
+      const oldQty = item.quantity;
+      item.quantity = quantity;
+      updateCartData(cartItems, now);
+
+      return $http.patch(`${API_BASE}/cart/update_item/${item.id}`, { quantity: quantity })
+        .then(res => {
+          updateCartData(res.data, now);
+          return res.data;
+        }).catch(err => {
+          item.quantity = oldQty; // Rollback
+          updateCartData(cartItems, now);
+          throw err;
+        });
+    },
+    removeItem: function (productId) {
+      if (!AuthService.isLoggedIn()) return;
+      const item = getCartItemByProductId(productId);
+      if (!item) return;
+
+      const now = Date.now();
+      lastUpdateTimestamp = now;
+
+      // Optimistic Update
+      const index = cartItems.indexOf(item);
+      if (index > -1) {
+        cartItems.splice(index, 1);
+        updateCartData(cartItems, now);
+      }
+
+      return $http.delete(`${API_BASE}/cart/remove_item/${item.id}`)
+        .then(res => {
+          updateCartData(res.data, now);
+          return res.data;
+        }).catch(err => {
+          this.fetchCart(); // Rollback
+          throw err;
+        });
+    }
+  };
 });
 
 // AuthService
@@ -270,7 +420,7 @@ app.controller("SignupController", function ($scope, $http, $location, $rootScop
   };
 });
 
-app.controller("ProductsController", function ($scope, $http, $rootScope, AuthService, $routeParams, $location) {
+app.controller("ProductsController", function ($scope, $http, $rootScope, AuthService, $routeParams, $location, CartService) {
   $scope.products = null;
   $scope.categories = [];
   $scope.selectedCategory = "";
@@ -312,29 +462,25 @@ app.controller("ProductsController", function ($scope, $http, $rootScope, AuthSe
   };
 
   $scope.addToCart = function (product) {
-    if (!AuthService.isLoggedIn()) {
-      alert("Please login to add items to cart.");
-      return;
-    }
-    $http.post(`${API_BASE}/cart/add_item`, { product_id: product.id, quantity: 1 })
-      .then((res) => {
-        alert("Item added to your cart!");
-        $rootScope.$broadcast("cartUpdated", res.data.cart_items ? res.data.cart_items.length : 1);
-      })
-      .catch((err) => {
-        console.error("Cart error:", err);
-        let msg = "Could not add to cart.";
-        if (err.status === 401 || err.status === 403) msg = "Please login to add items to cart.";
-        if (err.data) {
-          if (err.data.error) msg = err.data.error;
-          else if (err.data.errors) msg = Array.isArray(err.data.errors) ? err.data.errors.join(", ") : err.data.errors;
-        }
-        alert(msg);
-      });
+    CartService.addItem(product, 1);
+  };
+
+  $scope.getCartQuantity = function (productId) {
+    return CartService.getQuantity(productId);
+  };
+
+  $scope.increaseQuantity = function (product) {
+    const current = CartService.getQuantity(product.id);
+    CartService.updateQuantity(product.id, current + 1);
+  };
+
+  $scope.decreaseQuantity = function (product) {
+    const current = CartService.getQuantity(product.id);
+    CartService.updateQuantity(product.id, current - 1);
   };
 });
 
-app.controller("ProductDetailsController", function ($scope, $http, $routeParams, AuthService, $location, $rootScope) {
+app.controller("ProductDetailsController", function ($scope, $http, $routeParams, AuthService, $location, $rootScope, CartService) {
   $scope.product = {};
   $scope.newReview = { rating: 5 };
 
@@ -370,30 +516,25 @@ app.controller("ProductDetailsController", function ($scope, $http, $routeParams
   };
 
   $scope.addToCart = function (product, quantity) {
-    if (!AuthService.isLoggedIn()) {
-      $location.path("/login");
-      return;
-    }
-    const qty = quantity || 1;
-    $http.post(`${API_BASE}/cart/add_item`, { product_id: product.id, quantity: qty })
-      .then(res => {
-        const count = (res.data && res.data.cart_items) ? res.data.cart_items.length : 1;
-        $rootScope.$broadcast("cartUpdated", count);
-        alert("Product added to cart!");
-      })
-      .catch(err => {
-        console.error("Add to cart error:", err);
-        let msg = "Could not add to cart";
-        if (err.data) {
-          if (err.data.error) msg = err.data.error;
-          else if (err.data.errors) msg = Array.isArray(err.data.errors) ? err.data.errors.join(", ") : err.data.errors;
-        }
-        alert(msg);
-      });
+    CartService.addItem(product, quantity || 1);
+  };
+
+  $scope.getCartQuantity = function (productId) {
+    return CartService.getQuantity(productId);
+  };
+
+  $scope.increaseQuantity = function (product) {
+    const current = CartService.getQuantity(product.id);
+    CartService.updateQuantity(product.id, current + 1);
+  };
+
+  $scope.decreaseQuantity = function (product) {
+    const current = CartService.getQuantity(product.id);
+    CartService.updateQuantity(product.id, current - 1);
   };
 });
 
-app.controller("CartController", function ($scope, $http, $location, $rootScope, AuthService) {
+app.controller("CartController", function ($scope, $http, $location, $rootScope, AuthService, CartService) {
   $scope.cart = { cart_items: [] };
   $scope.addresses = [];
   $scope.selectedAddressId = null;
@@ -413,11 +554,9 @@ app.controller("CartController", function ($scope, $http, $location, $rootScope,
   };
 
   const fetchCart = function () {
-    $http.get(`${API_BASE}/cart`).then(res => {
-      $scope.cart = res.data;
-      $rootScope.$broadcast("cartUpdated", res.data.cart_items.length);
-    });
+    CartService.fetchCart();
   };
+  
   fetchCart();
   fetchAddresses();
 
@@ -465,23 +604,26 @@ app.controller("CartController", function ($scope, $http, $location, $rootScope,
 
   $scope.increaseQuantity = function (item) {
     if (item.quantity >= item.product.stock_quantity) {
-      alert("Cannot exceed available stock");
+      // Quietly limit
       return;
     }
-    item.quantity++;
-    $scope.updateQuantity(item);
+    CartService.updateQuantity(item.product_id, item.quantity + 1);
   };
 
   $scope.decreaseQuantity = function (item) {
     if (item.quantity <= 1) return;
-    item.quantity--;
-    $scope.updateQuantity(item);
+    CartService.updateQuantity(item.product_id, item.quantity - 1);
   };
 
   $scope.removeItem = function (item) {
-    $http.delete(`${API_BASE}/cart/remove_item/${item.id}`)
-      .then(fetchCart);
+    CartService.removeItem(item.product_id);
   };
+
+  $scope.$on("cartUpdated", function(event, data) {
+    if (data && data.fullData) {
+      $scope.cart = data.fullData;
+    }
+  });
 
   $scope.paymentMethod = 'Online';
   $scope.isProcessing = false;

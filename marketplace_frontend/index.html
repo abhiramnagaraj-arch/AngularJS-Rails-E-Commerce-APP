@@ -24,7 +24,7 @@
   <!-- VanillaTilt for 3D card effects -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.7.0/vanilla-tilt.min.js"></script>
   <!-- App -->
-  <script src="app.js?v=2026_03_16_fix"></script>
+  <script src="app.js?v=2026_03_16_cart_v8"></script>
 
   <style>
     /* =============================================
@@ -591,6 +591,14 @@
       color: var(--text-primary) !important;
       border-radius: var(--radius-sm);
       transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+      appearance: none;
+    }
+
+    .form-select {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23f0f4ff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+      background-repeat: no-repeat !important;
+      background-position: right 1rem center !important;
+      background-size: 16px 12px !important;
     }
 
     .form-control::placeholder {
@@ -605,17 +613,20 @@
     }
 
     .glass-select {
-      background: rgba(13, 27, 42, 0.6) !important;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 1px solid var(--border-subtle) !important;
+      background: rgba(13, 27, 42, 0.8) !important;
+      backdrop-filter: blur(20px) !important;
+      -webkit-backdrop-filter: blur(20px) !important;
+      border: 1px solid var(--border-glow) !important;
       color: var(--text-primary) !important;
       cursor: pointer;
+      border-radius: var(--radius-pill);
     }
 
-    .glass-select option {
+    .glass-select option,
+    .form-select option {
       background-color: var(--bg-surface) !important;
       color: var(--text-primary) !important;
+      padding: 12px !important;
     }
 
     .form-label {
@@ -1641,6 +1652,22 @@
             padding-left: 0;
             padding-right: 0;
         }
+    }
+    /* Qty Control Refinements */
+    .qty-control span {
+      min-width: 25px;
+      text-align: center;
+      display: inline-block;
+      user-select: none;
+    }
+
+    .qty-control .btn-link {
+      text-decoration: none !important;
+      transition: transform var(--transition-fast);
+    }
+
+    .qty-control .btn-link:active {
+      transform: scale(0.9);
     }
   </style>
 </head>
