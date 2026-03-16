@@ -131,7 +131,10 @@ class Api::V1::OrdersController < ApplicationController
     # This is being replaced by the create_payment_intent -> Webhook flow.
     # We will keep a simplified version for Cash on Delivery (COD) if needed.
     
-    return render json: { error: 'Direct checkout is deprecated. Use create_payment_intent.' }, status: :gone if params[:payment_method] == 'Online'
+    allowed_methods = ['COD']
+    unless allowed_methods.include?(params[:payment_method])
+      return render json: { error: "Invalid payment method. This endpoint only accepts: #{allowed_methods.join(', ')}" }, status: :unprocessable_entity
+    end
 
     # Simple COD flow (No Stripe involved)
     @cart = current_user.cart

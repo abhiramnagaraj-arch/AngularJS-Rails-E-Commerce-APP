@@ -1,6 +1,12 @@
 const app = angular.module("marketplaceApp", ["ngRoute", "ngAnimate"]);
 
-const API_BASE = "http://localhost:3000/api/v1";
+const API_BASE = "http://127.0.0.1:3000/api/v1";
+
+app.config(function ($httpProvider) {
+  $httpProvider.defaults.withCredentials = true;
+  $httpProvider.defaults.headers.common['Accept'] = 'application/json';
+  $httpProvider.defaults.headers.common['Content-Type'] = 'application/json';
+});
 
 // Routing Configuration
 app.config(function ($routeProvider) {
@@ -119,12 +125,30 @@ app.factory("AuthService", function ($window, $rootScope) {
 });
 
 // Auth Interceptor for JWT
-app.factory("AuthInterceptor", function (AuthService) {
+app.factory("AuthInterceptor", function (AuthService, $location, $q) {
   return {
     request: function (config) {
       const token = AuthService.getToken();
-      if (token) config.headers.Authorization = token;
+      
+      // Ensure we always request JSON
+      config.headers['Accept'] = 'application/json';
+      
+      if (token) {
+        config.headers['Authorization'] = token;
+        console.log(`[AUTH] Interceptor: Sending token to ${config.method} ${config.url}`);
+      } else {
+        console.warn(`[AUTH] Interceptor: No token found for ${config.method} ${config.url}`);
+      }
       return config;
+    },
+    responseError: function (rejection) {
+      console.error(`[AUTH] Response Error ${rejection.status} for ${rejection.config ? rejection.config.url : 'unknown url'}`, rejection);
+      if (rejection.status === 401) {
+        console.error("[AUTH] 401 Detected - User likely unauthenticated or session expired.");
+        AuthService.logout();
+        $location.path("/login");
+      }
+      return $q.reject(rejection);
     }
   };
 });
@@ -141,7 +165,17 @@ app.directive('fileModel', ['$parse', function ($parse) {
 
       element.bind('change', function () {
         scope.$apply(function () {
-          modelSetter(scope, element[0].files[0]);
+          var file = element[0].files[0];
+          if (file) {
+            // 5MB Limit
+            const maxSize = 5 * 1024 * 1024;
+            if (file.size > maxSize) {
+              alert("File too large. Maximum size is 5MB.");
+              element.val(""); // Clear the input
+              return;
+            }
+            modelSetter(scope, file);
+          }
         });
       });
     }
@@ -159,12 +193,22 @@ app.controller("LoginController", function ($scope, $http, $location, $rootScope
   $scope.login = function () {
     $http.post(`${API_BASE}/auth/login`, { user: $scope.credentials })
       .then(res => {
+        console.log("[AUTH] Login SUCCESS. Status:", res.status);
+        console.log("[AUTH] Login Headers:", res.headers());
+        console.log("[AUTH] Login Data:", JSON.stringify(res.data));
         const token = res.headers("authorization") || res.headers("Authorization") || res.data.token;
         if (token) {
           const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
           AuthService.saveToken(formattedToken);
+          console.log("[AUTH] Token saved:", formattedToken);
+        } else {
+          console.error("[AUTH] Login success but NO TOKEN found in headers or data!");
         }
-        AuthService.saveUser(res.data.user);
+        if (res.data && res.data.user) {
+          AuthService.saveUser(res.data.user);
+        } else {
+          console.error("[AUTH] Login success but NO USER data found!");
+        }
         $rootScope.$broadcast("authChanged");
 
         // Role based redirect using intended role or actual role
@@ -192,12 +236,22 @@ app.controller("SignupController", function ($scope, $http, $location, $rootScop
   $scope.signup = function () {
     $http.post(`${API_BASE}/auth/register`, { user: $scope.user })
       .then(res => {
+        console.log("[AUTH] Signup SUCCESS. Status:", res.status);
+        console.log("[AUTH] Signup Headers:", res.headers());
+        console.log("[AUTH] Signup Data:", JSON.stringify(res.data));
         const token = res.headers("authorization") || res.headers("Authorization") || res.data.token;
         if (token) {
           const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
           AuthService.saveToken(formattedToken);
+          console.log("[AUTH] Token saved:", formattedToken);
+        } else {
+          console.error("[AUTH] Signup success but NO TOKEN found!");
         }
-        AuthService.saveUser(res.data.user);
+        if (res.data && res.data.user) {
+          AuthService.saveUser(res.data.user);
+        } else {
+          console.error("[AUTH] Signup success but NO USER data found!");
+        }
         $rootScope.$broadcast("authChanged");
 
         if ($scope.user.become_seller) {
@@ -271,13 +325,16 @@ app.controller("ProductsController", function ($scope, $http, $rootScope, AuthSe
         console.error("Cart error:", err);
         let msg = "Could not add to cart.";
         if (err.status === 401 || err.status === 403) msg = "Please login to add items to cart.";
-        if (err.data && err.data.error) msg = err.data.error;
+        if (err.data) {
+          if (err.data.error) msg = err.data.error;
+          else if (err.data.errors) msg = Array.isArray(err.data.errors) ? err.data.errors.join(", ") : err.data.errors;
+        }
         alert(msg);
       });
   };
 });
 
-app.controller("ProductDetailsController", function ($scope, $http, $routeParams, AuthService) {
+app.controller("ProductDetailsController", function ($scope, $http, $routeParams, AuthService, $location, $rootScope) {
   $scope.product = {};
   $scope.newReview = { rating: 5 };
 
@@ -310,6 +367,29 @@ app.controller("ProductDetailsController", function ($scope, $http, $routeParams
         alert("Review deleted.");
       }).catch(err => alert("Error deleting review."));
     }
+  };
+
+  $scope.addToCart = function (product, quantity) {
+    if (!AuthService.isLoggedIn()) {
+      $location.path("/login");
+      return;
+    }
+    const qty = quantity || 1;
+    $http.post(`${API_BASE}/cart/add_item`, { product_id: product.id, quantity: qty })
+      .then(res => {
+        const count = (res.data && res.data.cart_items) ? res.data.cart_items.length : 1;
+        $rootScope.$broadcast("cartUpdated", count);
+        alert("Product added to cart!");
+      })
+      .catch(err => {
+        console.error("Add to cart error:", err);
+        let msg = "Could not add to cart";
+        if (err.data) {
+          if (err.data.error) msg = err.data.error;
+          else if (err.data.errors) msg = Array.isArray(err.data.errors) ? err.data.errors.join(", ") : err.data.errors;
+        }
+        alert(msg);
+      });
   };
 });
 
@@ -581,6 +661,19 @@ app.controller("SellerController", function ($scope, $http) {
   };
   fetchDashboard();
 
+  $scope.requestReactivation = function () {
+    if (confirm("Request protocol restoration? This signal will be transmitted to the Overseer (Admin).")) {
+      $http.patch(`${API_BASE}/sellers/request_reactivation`)
+        .then(res => {
+          alert("Reactivation request transmitted. Protocol status: PENDING OVERRIDE.");
+          fetchDashboard();
+        })
+        .catch(err => {
+          alert("Signal failure: " + (err.data ? err.data.error : "Unknown interference"));
+        });
+    }
+  };
+
   $scope.getUniqueSellerBuyers = function () {
     if (!$scope.myOrders || !Array.isArray($scope.myOrders)) return [];
     const buyersMap = {};
@@ -733,6 +826,20 @@ app.controller("AdminController", function ($scope, $http) {
     timeRange: 'all'
   };
 
+  $scope.groupOrdersByStatus = function () {
+    if (!$scope.allOrders) return;
+    const filtered = $scope.getFilteredOrders();
+
+    $scope.groupedOrders = [
+      { id: 'pending', label: 'PENDING TRANSMISSIONS', items: filtered.filter(o => o.status === 'pending') },
+      { id: 'paid', label: 'READY FOR DISPATCH', items: filtered.filter(o => o.status === 'paid') },
+      { id: 'shipped', label: 'ACTIVE SHIPMENTS', items: filtered.filter(o => o.status === 'shipped') },
+      { id: 'delivered', label: 'COMPLETED DELIVERIES', items: filtered.filter(o => o.status === 'delivered') },
+      { id: 'cancelled', label: 'CANCELLED/FAILED', items: filtered.filter(o => o.status === 'cancelled' || o.status === 'failed') },
+      { id: 'unclassified', label: 'MISCELLANEOUS SIGNAL', items: filtered.filter(o => !['pending', 'paid', 'shipped', 'delivered', 'cancelled', 'failed'].includes(o.status)) }
+    ];
+  };
+
   $scope.getFilteredOrders = function () {
     if (!$scope.allOrders) return [];
     let orders = [...$scope.allOrders];
@@ -766,54 +873,40 @@ app.controller("AdminController", function ($scope, $http) {
     return orders.sort((a, b) => (b.id || 0) - (a.id || 0));
   };
 
-  $scope.groupOrdersByStatus = function() {
-    if (!$scope.allOrders) return;
-    const filtered = $scope.getFilteredOrders();
-    
-    // We use an array of objects to guarantee the UI order
-    $scope.groupedOrders = [
-      { id: 'pending', label: 'PENDING TRANSMISSIONS', items: filtered.filter(o => o.status === 'pending') },
-      { id: 'paid', label: 'READY FOR DISPATCH', items: filtered.filter(o => o.status === 'paid') },
-      { id: 'shipped', label: 'ACTIVE SHIPMENTS', items: filtered.filter(o => o.status === 'shipped') },
-      { id: 'delivered', label: 'COMPLETED DELIVERIES', items: filtered.filter(o => o.status === 'delivered') },
-      { id: 'cancelled', label: 'CANCELLED/FAILED', items: filtered.filter(o => o.status === 'cancelled' || o.status === 'failed') },
-      { id: 'unclassified', label: 'MISCELLANEOUS SIGNAL', items: filtered.filter(o => !['pending', 'paid', 'shipped', 'delivered', 'cancelled', 'failed'].includes(o.status)) }
-    ];
+  $scope.scrollToSection = function (id) {
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) {
+        const yOffset = -100; 
+        const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      } else {
+        console.warn(`[ADMIN] Scroll target not found: ${id}`);
+      }
+    }, 150);
   };
 
-  $scope.getFilteredOrders = function () {
-    if (!$scope.allOrders) return [];
-    let orders = $scope.allOrders;
+  $scope.scrollToSellers = () => $scope.scrollToSection('active-merchants');
 
-    // View type filtering
-    if ($scope.orderFilterConfig.viewType === 'customer' && $scope.orderFilterConfig.customerId) {
-      orders = orders.filter(o => String(o.buyer_id) === String($scope.orderFilterConfig.customerId));
-    }
+  $scope.moderateAllSignals = function () {
+    console.log("[ADMIN] Moderating all signals (Filtering & Scrolling)...");
+    $scope.sellerSearch.onlyReactivation = true;
+    $scope.sellerSearch.store_name = '';
+    $scope.scrollToSellers();
+  };
 
-    if ($scope.orderFilterConfig.viewType === 'seller' && $scope.orderFilterConfig.sellerId) {
-      orders = orders.map(o => {
-        const filteredItems = o.order_items.filter(item => String(item.product.seller_id) === String($scope.orderFilterConfig.sellerId));
-        if (filteredItems.length > 0) {
-          return { ...o, order_items: filteredItems };
-        }
-        return null;
-      }).filter(o => o !== null);
-    }
+  $scope.focusMerchant = function (storeName) {
+    console.log(`[ADMIN] Focusing merchant: ${storeName}`);
+    $scope.sellerSearch.store_name = storeName;
+    $scope.sellerSearch.onlyReactivation = false;
+    $scope.scrollToSellers();
+  };
 
-    // Time-based filtering
-    if ($scope.orderFilterConfig.timeRange !== 'all') {
-      const now = new Date();
-      let threshold;
-      if ($scope.orderFilterConfig.timeRange === '24h') threshold = new Date(now.getTime() - (24 * 60 * 60 * 1000));
-      else if ($scope.orderFilterConfig.timeRange === '7d') threshold = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
-      else if ($scope.orderFilterConfig.timeRange === '30d') threshold = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
-
-      if (threshold) {
-        orders = orders.filter(o => new Date(o.created_at) >= threshold);
-      }
-    }
-
-    return orders;
+  $scope.resetScanners = function () {
+    console.log("[ADMIN] Resetting scanners...");
+    $scope.sellerSearch.store_name = '';
+    $scope.sellerSearch.onlyReactivation = false;
+    $scope.scrollToSellers();
   };
 
   // Reactive grouping
@@ -877,16 +970,7 @@ app.controller("AdminController", function ($scope, $http) {
     });
   };
 
-  const scrollToSection = (id) => {
-    setTimeout(() => {
-      const el = document.getElementById(id);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
-  };
-
   fetchAdminData();
-
-  $scope.scrollToSellers = () => scrollToSection('active-sellers-section');
 
   $scope.openAddProduct = () => {
     $scope.editingProduct = { active: true };

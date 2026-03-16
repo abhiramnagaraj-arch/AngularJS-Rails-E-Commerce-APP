@@ -1,10 +1,11 @@
 Rails.application.routes.draw do
 
-  namespace :api do
-    namespace :v1 do
+  namespace :api, defaults: { format: :json } do
+    namespace :v1, defaults: { format: :json } do
 
       devise_for :users,
         path: 'auth',
+        defaults: { format: :json },
         path_names: {
           sign_in: 'login',
           sign_out: 'logout',
@@ -49,7 +50,7 @@ Rails.application.routes.draw do
       resources :sellers, only: [:create] do
         collection do
           get :stats
-          post :request_reactivation
+          patch :request_reactivation
           get :billing
           put :update_bank_details
         end

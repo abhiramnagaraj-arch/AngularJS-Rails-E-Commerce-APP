@@ -25,6 +25,13 @@ module Api
 
       def request_reactivation
         seller = current_user.seller
+        return render json: { error: "No seller profile found" }, status: :not_found unless seller
+        authorize! :update, seller
+
+        unless seller.suspended
+          return render json: { error: "Reactivation can only be requested for suspended accounts" }, status: :unprocessable_entity
+        end
+
         if seller.update(reactivation_requested: true)
           render json: { message: "Reactivation requested successfully", seller: seller }
         else
@@ -40,7 +47,7 @@ module Api
         authorize! :create, @seller
 
         if @seller.save
-          current_user.update(role: :seller)
+          current_user.update(role: :seller) if current_user.buyer?
 
           render json: {
             message: "Seller profile created successfully",
@@ -54,6 +61,7 @@ module Api
       def billing
         seller = current_user.seller
         return render json: { error: "No seller profile found" }, status: :not_found unless seller
+        authorize! :billing, seller
 
         render json: {
           invoices: seller.invoices.order(billing_date: :desc),
@@ -69,6 +77,7 @@ module Api
       def update_bank_details
         seller = current_user.seller
         return render json: { error: "No seller profile found" }, status: :not_found unless seller
+        authorize! :update_bank_details, seller
 
         if seller.update(bank_params)
           render json: { message: "Bank details updated successfully", seller: seller }

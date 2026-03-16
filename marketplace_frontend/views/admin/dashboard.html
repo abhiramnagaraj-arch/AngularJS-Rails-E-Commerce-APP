@@ -1,6 +1,32 @@
 <div class="dashboard-container container-fluid px-md-5 mt-4 mb-5 admin-theme">
-    <!-- Header Section -->
-    <div class="row mb-5 align-items-end animate-on-scroll">
+    <!-- Sidebar Navigation -->
+    <div class="admin-sidebar d-none d-lg-block">
+        <div class="sidebar-header p-4">
+            <p class="x-small fw-bold text-primary-glow mb-0 letter-spacing-2">SYSTEM: ACTIVE</p>
+        </div>
+        <nav class="sidebar-nav px-3">
+            <button class="nav-link-glass mb-3" ng-click="scrollToSection('verification-queue')">
+                <i class="bi bi-shield-check me-2"></i> VERIFY QUEUE
+            </button>
+            <button class="nav-link-glass mb-3" ng-click="scrollToSection('active-merchants')">
+                <i class="bi bi-people me-2"></i> MERCHANT NODES
+            </button>
+            <button class="nav-link-glass mb-3" ng-click="scrollToSection('artifact-catalog')">
+                <i class="bi bi-grid-3x3-gap me-2"></i> ARTIFACT CATALOG
+            </button>
+            <button class="nav-link-glass mb-3" ng-click="scrollToSection('transmission-log')">
+                <i class="bi bi-terminal me-2"></i> TRANSMISSION LOG
+            </button>
+            <button class="nav-link-glass mb-3" ng-click="scrollToSection('sentiment-moderation')">
+                <i class="bi bi-chat-heart me-2"></i> SENTIMENT MOD
+            </button>
+        </nav>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="admin-main-content">
+        <!-- Header Section -->
+        <div class="row mb-5 align-items-end animate-on-scroll">
         <div class="col-md-12">
             <p class="section-eyebrow mb-1 text-primary-glow">✦ PLATFORM OVERLORD</p>
             <h1 class="hero-title-gradient fw-bold mb-0">Admin Control Center</h1>
@@ -26,14 +52,14 @@
                             <span
                                 class="badge bg-white-5 text-danger border border-danger-subtle px-3 py-2 x-small transition-smooth hover-bg-danger pointer"
                                 ng-repeat="s in allSellers | filter:{suspended: true, reactivation_requested: true}"
-                                ng-click="sellerSearch.store_name = s.store_name; sellerSearch.onlyReactivation = false; scrollToSellers()">
+                                ng-click="focusMerchant(s.store_name)">
                                 {{s.store_name}}
                             </span>
                         </div>
                     </div>
                 </div>
                 <button class="btn btn-danger btn-lg rounded-pill px-4 fw-bold shadow-glow pulse-glow"
-                    ng-click="sellerSearch.onlyReactivation = true; sellerSearch.store_name = ''; scrollToSellers()">
+                    ng-click="moderateAllSignals()">
                     Moderate All Signals
                 </button>
             </div>
@@ -78,7 +104,7 @@
     </div>
 
     <!-- Verification Zone: Pending Sellers -->
-    <div class="card bg-glass border-subtle rounded-4 overflow-hidden mb-5 animate-on-scroll">
+    <div id="verification-queue" class="card bg-glass border-subtle rounded-4 overflow-hidden mb-5 animate-on-scroll">
         <div class="card-header bg-white-5 border-subtle p-4 d-flex justify-content-between align-items-center">
             <h5 class="mb-0 fw-bold text-white letter-spacing-1">PENDING VERIFICATION QUEUE</h5>
             <span class="badge bg-white-10 text-white rounded-pill px-3 py-2 x-small">AUTHORIZATION REQUIRED</span>
@@ -119,7 +145,7 @@
     </div>
 
     <!-- Sector Management: Active Sellers -->
-    <div id="active-sellers-section"
+    <div id="active-merchants"
         class="card bg-glass border-subtle rounded-4 overflow-hidden mb-5 animate-on-scroll">
         <div
             class="card-header bg-white-5 border-subtle p-4 d-flex justify-content-between align-items-center flex-wrap gap-4">
@@ -141,7 +167,7 @@
                 </div>
                 <button class="btn btn-sm btn-link text-muted x-small fw-bold border-0 text-decoration-none"
                     ng-if="sellerSearch.store_name || sellerSearch.onlyReactivation"
-                    ng-click="sellerSearch.store_name = ''; sellerSearch.onlyReactivation = false">
+                    ng-click="resetScanners()">
                     RESET SCANNERS
                 </button>
             </div>
@@ -186,7 +212,7 @@
     </div>
 
     <!-- Catalog Oversight: Global Products -->
-    <div class="card bg-glass border-subtle rounded-4 overflow-hidden mb-5 animate-on-scroll">
+    <div id="artifact-catalog" class="card bg-glass border-subtle rounded-4 overflow-hidden mb-5 animate-on-scroll">
         <div
             class="card-header bg-white-5 border-subtle p-4 d-flex justify-content-between align-items-center flex-wrap gap-4">
             <h5 class="mb-0 fw-bold text-white letter-spacing-1">GLOBAL ARTIFACT CATALOG</h5>
@@ -284,7 +310,7 @@
                     </tr>
                 </thead>
                 <tbody class="stagger-children">
-                    <tr ng-repeat="product in allProducts | filter:searchProduct"
+                    <tr ng-repeat="product in allProducts | filter: { name: searchProduct.name, category_id: searchProduct.category_id || undefined }"
                         class="border-bottom border-white-5 transition-smooth">
                         <td class="ps-4 py-3">
                             <div class="d-flex align-items-center">
@@ -322,7 +348,8 @@
     </div>
 
     <!-- Platform Transmission Registry: Global Orders -->
-    <div class="card bg-glass border-subtle rounded-4 overflow-hidden mb-5 animate-on-scroll">
+    <!-- Platform Transmission Log -->
+    <div id="transmission-log" class="card bg-glass border-subtle rounded-4 overflow-hidden mb-5 animate-on-scroll">
         <div
             class="card-header bg-white-5 border-subtle p-4 d-flex justify-content-between align-items-center flex-wrap gap-4">
             <h5 class="mb-0 fw-bold text-white letter-spacing-1">PLATFORM TRANSMISSION LOG</h5>
@@ -479,7 +506,7 @@
     </div>
 
     <!-- Review Oversight: Platforms Moderation -->
-    <div class="card bg-glass border-subtle rounded-4 mb-5 animate-on-scroll">
+    <div id="sentiment-moderation" class="card bg-glass border-subtle rounded-4 mb-5 animate-on-scroll">
         <div class="card-header bg-white-5 border-subtle p-4">
             <h5 class="mb-0 fw-bold text-white letter-spacing-1">SENTIMENT MODERATION</h5>
             <p class="text-muted small mb-0 mt-1">Audit customer transmissions and moderate platform sentiment</p>
@@ -524,6 +551,7 @@
                 <p class="letter-spacing-1 x-small">NO SENTIMENT LOGS AWAITING MODERATION.</p>
             </div>
         </div>
+    </div>
     </div>
 </div>
 

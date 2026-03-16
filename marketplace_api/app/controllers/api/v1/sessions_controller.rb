@@ -5,8 +5,17 @@ module Api
       respond_to :json
 
       def create
-        self.resource = User.find_by(email: params[:user][:email])
-        if resource&.valid_password?(params[:user][:password])
+        # Manually find and authenticate the user because Devise might be skipping it in API mode
+        # or parameters might be wrapped incorrectly.
+        Rails.logger.info "--- LOGIN PARAMS: #{params.inspect} ---"
+        user_params = params[:user] || params[:session][:user] rescue nil
+        email = user_params&.dig(:email)
+        password = user_params&.dig(:password)
+
+        self.resource = User.find_by(email: email)
+        
+        if resource&.valid_password?(password)
+          # Use sign_in to trigger Devise callbacks and warden-jwt_auth hooks
           sign_in(resource_name, resource)
           yield resource if block_given?
           respond_with resource, location: after_sign_in_path_for(resource)
@@ -19,6 +28,9 @@ module Api
 
       def respond_with(resource, _opts = {})
         token = request.env['warden-jwt_auth.token']
+        # Explicitly set header for convenience and debugging
+        response.set_header('Authorization', "Bearer #{token}") if token
+        Rails.logger.info "--- GENERATED TOKEN: #{token.present? ? 'PRESENT' : 'MISSING'} ---"
         render json: {
           message: 'Logged in successfully',
           token: token,

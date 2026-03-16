@@ -4,20 +4,11 @@ module Api
       respond_to :json
 
       def create
-        build_resource(sign_up_params)
-
-        if params[:user][:become_seller] == true || params[:user][:become_seller] == 'true'
-          resource.role = :seller
-        end
-
-        resource.save
-        if resource.persisted?
-          if resource.active_for_authentication?
-            sign_up(resource_name, resource)
+        super do |resource|
+          if params[:user][:become_seller] == true || params[:user][:become_seller] == 'true'
+            resource.update(role: :seller)
           end
         end
-        yield resource if block_given?
-        respond_with(resource)
       end
 
       private
@@ -28,8 +19,13 @@ module Api
 
       def respond_with(resource, _opts = {})
         if resource.persisted?
+          token = request.env['warden-jwt_auth.token']
+          # Explicitly set header for convenience and debugging
+          response.set_header('Authorization', "Bearer #{token}") if token
+          Rails.logger.info "--- GENERATED TOKEN (Signup): #{token.present? ? 'PRESENT' : 'MISSING'} ---"
           render json: {
             message: "Signed up successfully",
+            token: token,
             user: {
               id: resource.id,
               email: resource.email,
