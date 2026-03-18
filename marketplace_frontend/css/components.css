@@ -1,0 +1,465 @@
+/* =============================================
+   GLOBAL CARD STYLES
+   ============================================= */
+.card {
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: var(--radius-lg) !important;
+  transition: transform var(--transition-smooth), box-shadow var(--transition-smooth), border-color var(--transition-smooth);
+  overflow: hidden;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3), 0 0 30px rgba(79, 142, 247, 0.08) !important;
+  border-color: var(--border-glow) !important;
+}
+
+.card-header,
+.card-footer {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+.card-body {
+  color: var(--text-primary);
+}
+
+/* =============================================
+   GLOBAL BUTTON OVERRIDES
+   ============================================= */
+.btn-primary {
+  background: var(--primary-gradient) !important;
+  border: none !important;
+  border-radius: var(--radius-sm);
+  color: white !important;
+  font-weight: 600;
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow var(--transition-fast), transform var(--transition-fast);
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 8px 30px var(--primary-glow), 0 0 15px rgba(79, 142, 247, 0.2);
+  transform: translateY(-1px);
+}
+
+.btn-primary:hover::before {
+  left: 100%;
+}
+
+.btn-primary:active {
+  transform: scale(0.97) !important;
+  box-shadow: 0 4px 15px var(--primary-glow);
+}
+
+.btn-outline-primary {
+  color: var(--primary) !important;
+  border-color: var(--primary) !important;
+  background: transparent !important;
+  transition: all var(--transition-fast);
+}
+
+.btn-outline-primary:hover {
+  background: var(--primary-gradient) !important;
+  color: white !important;
+  border-color: transparent !important;
+  box-shadow: 0 8px 25px var(--primary-glow);
+}
+
+.btn-outline-secondary {
+  color: var(--text-muted) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+.btn-outline-secondary:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-glow) !important;
+}
+
+.btn-outline-info {
+  color: var(--primary) !important;
+  border-color: rgba(79, 142, 247, 0.3) !important;
+}
+
+.btn-outline-info:hover {
+  background: rgba(79, 142, 247, 0.1) !important;
+  color: var(--text-primary) !important;
+}
+
+.btn-outline-danger {
+  color: var(--danger) !important;
+  border-color: rgba(248, 113, 113, 0.3) !important;
+}
+
+.btn-outline-danger:hover {
+  background: rgba(248, 113, 113, 0.1) !important;
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #34D399, #10B981) !important;
+  border: none !important;
+  font-weight: 600;
+}
+
+.btn-success:hover {
+  box-shadow: 0 8px 25px rgba(52, 211, 153, 0.35);
+}
+
+.btn-warning {
+  background: linear-gradient(135deg, #FBBF24, #F59E0B) !important;
+  border: none !important;
+  color: #1a1a1a !important;
+  font-weight: 600;
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #F87171, #EF4444) !important;
+  border: none !important;
+  font-weight: 600;
+}
+
+.btn-dark {
+  background: linear-gradient(135deg, #1E293B, #334155) !important;
+  border: none !important;
+  color: var(--text-primary) !important;
+}
+
+.btn-light {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid var(--border-subtle) !important;
+  color: var(--text-muted) !important;
+}
+
+.btn-light:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: var(--text-primary) !important;
+}
+
+/* =============================================
+   FORM CONTROLS
+   ============================================= */
+.form-control,
+.form-select {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid var(--border-subtle) !important;
+  color: var(--text-primary) !important;
+  border-radius: var(--radius-sm);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  appearance: none;
+}
+
+.form-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23f0f4ff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 1rem center !important;
+  background-size: 16px 12px !important;
+}
+
+.form-control::placeholder {
+  color: var(--text-muted) !important;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px var(--primary-glow), 0 0 15px var(--primary-glow) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.glass-select {
+  background: rgba(13, 27, 42, 0.8) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid var(--border-glow) !important;
+  color: var(--text-primary) !important;
+  cursor: pointer;
+  border-radius: var(--radius-pill);
+}
+
+.glass-select option,
+.form-select option {
+  background-color: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  padding: 12px !important;
+}
+
+.form-label {
+  color: var(--text-muted) !important;
+  font-weight: 500;
+}
+
+.form-text {
+  color: var(--text-muted) !important;
+}
+
+.form-check-input {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-color: var(--border-glow) !important;
+}
+
+.form-check-input:checked {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+}
+
+.form-check-label {
+  color: var(--text-muted) !important;
+}
+
+/* =============================================
+   TABLE DARK OVERRIDES
+   ============================================= */
+.table {
+  color: var(--text-primary);
+  --bs-table-bg: transparent;
+  --bs-table-hover-bg: rgba(79, 142, 247, 0.06);
+  --bs-table-striped-bg: rgba(255, 255, 255, 0.02);
+}
+
+.table th {
+  color: var(--text-muted) !important;
+  font-weight: 600;
+  border-color: var(--border-subtle) !important;
+}
+
+.table td {
+  border-color: var(--border-subtle) !important;
+  color: var(--text-primary);
+}
+
+.table thead {
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(79, 142, 247, 0.06) !important;
+}
+
+/* =============================================
+   BADGES
+   ============================================= */
+.badge {
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.bg-primary {
+  background: var(--primary-gradient) !important;
+}
+
+.bg-success {
+  background: linear-gradient(135deg, #34D399, #10B981) !important;
+}
+
+.bg-danger {
+  background: linear-gradient(135deg, #F87171, #EF4444) !important;
+}
+
+.bg-warning {
+  background: linear-gradient(135deg, #FBBF24, #F59E0B) !important;
+  color: #1a1a1a !important;
+}
+
+.bg-secondary {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: var(--text-muted) !important;
+}
+
+.bg-info {
+  background: linear-gradient(135deg, #38BDF8, #0EA5E9) !important;
+}
+
+.bg-light {
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: var(--text-primary) !important;
+}
+
+.bg-dark {
+  background: rgba(0, 0, 0, 0.3) !important;
+  color: var(--text-primary) !important;
+}
+
+.bg-white {
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
+.text-bg-secondary {
+  background: rgba(155, 111, 255, 0.15) !important;
+  color: var(--accent-violet) !important;
+}
+
+/* Subtle badges */
+.bg-primary-subtle {
+  background: rgba(79, 142, 247, 0.12) !important;
+  color: var(--primary) !important;
+}
+
+.bg-success-subtle {
+  background: rgba(52, 211, 153, 0.12) !important;
+  color: var(--success) !important;
+}
+
+.bg-danger-subtle {
+  background: rgba(248, 113, 113, 0.12) !important;
+  color: var(--danger) !important;
+}
+
+.bg-secondary-subtle {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: var(--text-muted) !important;
+}
+
+.bg-warning-subtle {
+  background: rgba(251, 191, 36, 0.12) !important;
+}
+
+/* =============================================
+   TYPOGRAPHY COLOR OVERRIDES
+   ============================================= */
+.text-dark {
+  color: var(--text-primary) !important;
+}
+
+.text-muted {
+  color: var(--text-muted) !important;
+}
+
+.text-primary {
+  color: var(--primary) !important;
+}
+
+.text-success {
+  color: var(--success) !important;
+}
+
+.text-danger {
+  color: var(--danger) !important;
+}
+
+.text-warning {
+  color: var(--accent-gold) !important;
+}
+
+.text-info {
+  color: #38BDF8 !important;
+}
+
+.text-white {
+  color: var(--text-primary) !important;
+}
+
+/* =============================================
+   ALERTS
+   ============================================= */
+.alert {
+  background: var(--bg-glass) !important;
+  border: 1px solid var(--border-subtle) !important;
+  color: var(--text-primary) !important;
+  backdrop-filter: blur(12px);
+}
+
+.alert-warning {
+  border-left: 4px solid var(--accent-gold) !important;
+}
+
+.alert-danger {
+  border-left: 4px solid var(--danger) !important;
+}
+
+.alert-info {
+  border-left: 4px solid var(--primary) !important;
+}
+
+.alert-light {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid var(--border-subtle) !important;
+}
+
+.alert-heading {
+  color: var(--text-primary) !important;
+}
+
+/* =============================================
+   MISC BOOTSTRAP OVERRIDES
+   ============================================= */
+.shadow-sm {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
+}
+
+.shadow {
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3) !important;
+}
+
+.shadow-lg {
+  box-shadow: 0 15px 60px rgba(0, 0, 0, 0.4) !important;
+}
+
+.border {
+  border-color: var(--border-subtle) !important;
+}
+
+.border-bottom {
+  border-color: var(--border-subtle) !important;
+}
+
+.border-top {
+  border-color: var(--border-subtle) !important;
+}
+
+.border-end {
+  border-color: var(--border-subtle) !important;
+}
+
+.border-start {
+  border-color: var(--border-subtle) !important;
+}
+
+.border-primary {
+  border-color: var(--primary) !important;
+}
+
+.border-danger {
+  border-color: var(--danger) !important;
+}
+
+.border-success {
+  border-color: var(--success) !important;
+}
+
+.border-info {
+  border-color: #38BDF8 !important;
+}
+
+hr {
+  border-color: var(--border-subtle) !important;
+  opacity: 1;
+}
+
+.breadcrumb-item a {
+  color: var(--primary) !important;
+}
+
+.breadcrumb-item.active {
+  color: var(--text-muted) !important;
+}
+
+.input-group-text {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-color: var(--border-subtle) !important;
+  color: var(--text-muted) !important;
+}

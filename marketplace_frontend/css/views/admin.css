@@ -1,0 +1,48 @@
+/* Sidebar Styles */
+.admin-sidebar {
+  position: fixed;
+  left: 0;
+  top: 80px;
+  bottom: 0;
+  width: 260px;
+  background: rgba(10, 14, 20, 0.8) !important;
+  backdrop-filter: blur(30px) !important;
+  border-right: 1px solid rgba(79, 142, 247, 0.2) !important;
+  z-index: 1000;
+  padding-top: 2rem;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.admin-main-content {
+  margin-left: 260px;
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+.nav-link-glass {
+  background: transparent;
+  border: 1px solid transparent;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: center;
+}
+
+.nav-link-glass:hover {
+  background: rgba(79, 142, 247, 0.1);
+  color: var(--primary);
+  border-color: rgba(79, 142, 247, 0.2);
+  transform: translateX(5px);
+}
+
+.nav-link-glass i {
+  font-size: 1.1rem;
+}
