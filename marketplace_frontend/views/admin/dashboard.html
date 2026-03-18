@@ -349,7 +349,7 @@
 
     <!-- Platform Transmission Registry: Global Orders -->
     <!-- Platform Transmission Log -->
-    <div id="transmission-log" class="card bg-glass border-subtle rounded-4 overflow-hidden mb-5 animate-on-scroll">
+    <div id="transmission-log" class="card bg-glass border-subtle rounded-4 overflow-hidden mb-5">
         <div
             class="card-header bg-white-5 border-subtle p-4 d-flex justify-content-between align-items-center flex-wrap gap-4">
             <h5 class="mb-0 fw-bold text-white letter-spacing-1">PLATFORM TRANSMISSION LOG</h5>
@@ -427,11 +427,17 @@
                                     <li><a class="dropdown-item small py-2 fw-medium" href=""
                                             ng-click="updateGlobalOrderStatus(order, 'pending')">Pending</a></li>
                                     <li><a class="dropdown-item small py-2 fw-medium" href=""
+                                            ng-click="updateGlobalOrderStatus(order, 'processing')">Processing</a></li>
+                                    <li><a class="dropdown-item small py-2 fw-medium" href=""
+                                            ng-click="updateGlobalOrderStatus(order, 'paid')">Paid (Ready)</a></li>
+                                    <li><a class="dropdown-item small py-2 fw-medium" href=""
                                             ng-click="updateGlobalOrderStatus(order, 'shipped')">Shipped</a></li>
                                     <li><a class="dropdown-item small py-2 fw-medium text-success" href=""
                                             ng-click="updateGlobalOrderStatus(order, 'delivered')">Delivered</a></li>
                                     <li><a class="dropdown-item small py-2 fw-medium text-danger" href=""
                                             ng-click="updateGlobalOrderStatus(order, 'cancelled')">Cancelled</a></li>
+                                    <li><a class="dropdown-item small py-2 fw-medium text-danger" href=""
+                                            ng-click="updateGlobalOrderStatus(order, 'failed')">Failed</a></li>
                                 </ul>
                             </div>
                             <div class="dropdown mb-3">
