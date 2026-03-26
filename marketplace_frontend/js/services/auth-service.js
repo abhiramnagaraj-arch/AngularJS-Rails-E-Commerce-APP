@@ -1,50 +1,107 @@
-// AuthService
-angular.module("marketplaceApp").factory("AuthService", function ($window, $rootScope) {
+angular.module("marketplaceApp").factory("AuthService", function ($window, $rootScope, $http, $location) {
+
+  const API = window.API_BASE;
+
   return {
-    saveToken: function (token) { $window.localStorage.setItem("auth_token", token); },
-    getToken: function () { return $window.localStorage.getItem("auth_token"); },
-    saveUser: function (user) { $window.localStorage.setItem("user", JSON.stringify(user)); },
+
+    // =========================
+    // TOKEN MANAGEMENT
+    // =========================
+    saveToken: function (token) {
+      if (token && token.startsWith('Bearer ')) {
+        token = token.substring(7);
+      }
+      $window.localStorage.setItem("auth_token", token);
+    },
+
+    getToken: function () {
+      return $window.localStorage.getItem("auth_token");
+    },
+
+    removeToken: function () {
+      $window.localStorage.removeItem("auth_token");
+    },
+
+    // =========================
+    // USER MANAGEMENT
+    // =========================
+    saveUser: function (user) {
+      $window.localStorage.setItem("user", JSON.stringify(user));
+    },
+
     getUser: function () {
       const user = $window.localStorage.getItem("user");
       return user ? JSON.parse(user) : null;
     },
-    isLoggedIn: function () { return !!this.getToken(); },
-    logout: function () {
-      $window.localStorage.removeItem("auth_token");
+
+    removeUser: function () {
       $window.localStorage.removeItem("user");
-    }
-  };
-});
-
-// Auth Interceptor for JWT
-angular.module("marketplaceApp").factory("AuthInterceptor", function (AuthService, $location, $q) {
-  return {
-    request: function (config) {
-      const token = AuthService.getToken();
-      
-      // Ensure we always request JSON
-      config.headers['Accept'] = 'application/json';
-      
-      if (token) {
-        config.headers['Authorization'] = token;
-        console.log(`[AUTH] Interceptor: Sending token to ${config.method} ${config.url}`);
-      } else {
-        console.warn(`[AUTH] Interceptor: No token found for ${config.method} ${config.url}`);
-      }
-      return config;
     },
-    responseError: function (rejection) {
-      console.error(`[AUTH] Response Error ${rejection.status} for ${rejection.config ? rejection.config.url : 'unknown url'}`, rejection);
-      if (rejection.status === 401) {
-        console.error("[AUTH] 401 Detected - User likely unauthenticated or session expired.");
-        AuthService.logout();
-        $location.path("/login");
+
+    // =========================
+    // AUTH STATE
+    // =========================
+    isLoggedIn: function () {
+      const token = this.getToken();
+      return !!token && !this.isTokenExpired(token);
+    },
+
+    isTokenExpired: function (token) {
+      if (!token) return true;
+      try {
+        const payloadBase64 = token.split('.')[1];
+        const payload = JSON.parse($window.atob(payloadBase64));
+        const exp = payload.exp;
+        const now = Math.floor(Date.now() / 1000);
+        return exp < now;
+      } catch (e) {
+        return true;
       }
-      return $q.reject(rejection);
+    },
+
+    // =========================
+    // INTENDED ROUTE
+    // =========================
+    setIntendedRoute: function (path) {
+      if (path === '/login' || path === '/signup') return;
+      $window.sessionStorage.setItem("intended_route", path);
+    },
+
+    getIntendedRoute: function () {
+      const path = $window.sessionStorage.getItem("intended_route");
+      $window.sessionStorage.removeItem("intended_route");
+      return path;
+    },
+
+    // =========================
+    // 🔥 CORRECT LOGOUT
+    // =========================
+    logout: function () {
+      const token = this.getToken();
+
+      if (!token) {
+        this.removeToken();
+        this.removeUser();
+        $rootScope.$broadcast("authChanged");
+        $location.path("/login");
+        return;
+      }
+
+      console.log("[AUTH] Calling backend logout...");
+
+      return $http.delete(`${API}/auth/logout`)
+        .then(() => {
+          console.log("[AUTH] Logout success → token revoked");
+        })
+        .catch((err) => {
+          console.error("[AUTH] Logout failed:", err);
+        })
+        .finally(() => {
+          this.removeToken();
+          this.removeUser();
+          $rootScope.$broadcast("authChanged");
+          $location.path("/login");
+        });
     }
   };
-});
-
-angular.module("marketplaceApp").config(function ($httpProvider) {
-  $httpProvider.interceptors.push("AuthInterceptor");
 });

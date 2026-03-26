@@ -11,7 +11,13 @@ class Product < ApplicationRecord
 
   def image_url
     if image.attached?
-      Rails.application.routes.url_helpers.rails_blob_url(image, host: 'localhost:3000')
+      options = Rails.application.config.action_mailer.default_url_options
+      host = options[:host] || 'localhost'
+      port = options[:port]
+      full_host = port ? "#{host}:#{port}" : host
+      
+      Rails.application.routes.url_helpers.rails_blob_url(image, host: full_host)
     end
   end
+
 end

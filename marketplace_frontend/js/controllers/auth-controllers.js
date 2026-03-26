@@ -8,31 +8,29 @@ angular.module("marketplaceApp").controller("LoginController", function ($scope,
   $scope.login = function () {
     $http.post(`${window.API_BASE}/auth/login`, { user: $scope.credentials })
       .then(res => {
-        console.log("[AUTH] Login SUCCESS. Status:", res.status);
-        console.log("[AUTH] Login Headers:", res.headers());
-        console.log("[AUTH] Login Data:", JSON.stringify(res.data));
-        const token = res.headers("authorization") || res.headers("Authorization") || res.data.token;
+        const token = res.headers("authorization") || res.data.token;
         if (token) {
-          const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-          AuthService.saveToken(formattedToken);
-          console.log("[AUTH] Token saved:", formattedToken);
-        } else {
-          console.error("[AUTH] Login success but NO TOKEN found in headers or data!");
+          AuthService.saveToken(token);
         }
         if (res.data && res.data.user) {
           AuthService.saveUser(res.data.user);
-        } else {
-          console.error("[AUTH] Login success but NO USER data found!");
         }
+        
+        $rootScope.message = { type: 'success', text: 'Logged in successfully!' };
         $rootScope.$broadcast("authChanged");
 
-        // Role based redirect using intended role or actual role
-        const user = res.data.user;
-        const intendedRole = $scope.credentials.role;
+        // 1. Check for intended route first
+        const intendedRoute = AuthService.getIntendedRoute();
+        if (intendedRoute) {
+          $location.path(intendedRoute);
+          return;
+        }
 
-        if (user.role === 'admin' || intendedRole === 'admin') {
+        // 2. Default role-based redirect
+        const user = res.data.user;
+        if (user.role === 'admin') {
           $location.path("/admin/dashboard");
-        } else if (user.role === 'seller' || intendedRole === 'seller') {
+        } else if (user.role === 'seller') {
           $location.path("/seller/dashboard");
         } else {
           $location.path("/");
@@ -40,47 +38,38 @@ angular.module("marketplaceApp").controller("LoginController", function ($scope,
       })
       .catch(err => {
         console.error("Login failure:", err);
-        alert("Login failed. Please check your credentials.");
+        $rootScope.message = { type: 'error', text: 'Login failed. Please check your credentials.' };
       });
   };
 });
 
 angular.module("marketplaceApp").controller("SignupController", function ($scope, $http, $location, $rootScope, AuthService) {
-  $scope.user = {};
   $scope.user = { role: 'buyer' };
+  
   $scope.signup = function () {
     $http.post(`${window.API_BASE}/auth/register`, { user: $scope.user })
       .then(res => {
-        console.log("[AUTH] Signup SUCCESS. Status:", res.status);
-        console.log("[AUTH] Signup Headers:", res.headers());
-        console.log("[AUTH] Signup Data:", JSON.stringify(res.data));
-        const token = res.headers("authorization") || res.headers("Authorization") || res.data.token;
+        const token = res.headers("authorization") || res.data.token;
         if (token) {
-          const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-          AuthService.saveToken(formattedToken);
-          console.log("[AUTH] Token saved:", formattedToken);
-        } else {
-          console.error("[AUTH] Signup success but NO TOKEN found!");
+          AuthService.saveToken(token);
         }
         if (res.data && res.data.user) {
           AuthService.saveUser(res.data.user);
-        } else {
-          console.error("[AUTH] Signup success but NO USER data found!");
         }
+        
+        $rootScope.message = { type: 'success', text: 'Signup successful!' };
         $rootScope.$broadcast("authChanged");
 
         if ($scope.user.become_seller) {
-          alert("Signup successful! Now please set up your seller profile.");
-          $location.path("/seller/dashboard"); // They will need to create profile there
+          $location.path("/seller/dashboard");
         } else {
-          alert("Signup successful!");
           $location.path("/");
         }
       })
       .catch(err => {
         console.log("Signup error:", err);
         const errors = err.data && err.data.errors ? err.data.errors.join(", ") : "Signup failed";
-        alert("Signup failed: " + errors);
+        $rootScope.message = { type: 'error', text: 'Signup failed: ' + errors };
       });
   };
 });

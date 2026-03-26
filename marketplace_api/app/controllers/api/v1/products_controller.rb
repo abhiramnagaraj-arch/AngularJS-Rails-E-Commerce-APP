@@ -15,10 +15,10 @@ class Api::V1::ProductsController < ApplicationController
     end
     
     if params[:query].present?
-      search_term = "%#{params[:query].downcase}%"
+      term = "%#{params[:query].downcase}%"
       @products = @products.left_joins(:category).where(
-        "LOWER(products.name) LIKE ? OR LOWER(products.description) LIKE ? OR LOWER(categories.name) LIKE ?",
-        search_term, search_term, search_term
+        "LOWER(products.name) LIKE :q OR LOWER(products.description) LIKE :q OR LOWER(categories.name) LIKE :q",
+        q: term
       )
     end
     

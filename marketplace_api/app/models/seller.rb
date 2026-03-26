@@ -6,10 +6,7 @@ class Seller < ApplicationRecord
   # Changed default from 'approved' to 'pending' to restore verification flow
   # enum :verification_status, { pending: 'pending', approved: 'approved', rejected: 'rejected' }, default: 'approved'
   enum :verification_status, { pending: 'pending', approved: 'approved', rejected: 'rejected' }, default: 'pending'
-  
-  def approved?
-    verification_status == 'approved'
-  end
+
 
   validates :store_name, presence: true
   validates :store_description, presence: true

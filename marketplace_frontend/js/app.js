@@ -1,49 +1,79 @@
 const app = angular.module("marketplaceApp", ["ngRoute", "ngAnimate"]);
 
+// =========================
+// HTTP CONFIG + INTERCEPTOR ✅
+// =========================
 app.config(function ($httpProvider) {
   $httpProvider.defaults.withCredentials = true;
   $httpProvider.defaults.headers.common['Accept'] = 'application/json';
   $httpProvider.defaults.headers.common['Content-Type'] = 'application/json';
+
+  // 🔥 ADD THIS LINE (IMPORTANT)
+  $httpProvider.interceptors.push("AuthInterceptor");
 });
 
-// Routing Configuration
+
+// =========================
+// ROUTING CONFIG
+// =========================
 app.config(function ($routeProvider) {
   const v = "?v=" + new Date().getTime();
 
   // Route guard: requires login
   const requireLogin = {
-    auth: function (AuthService, $location) {
-      if (!AuthService.isLoggedIn()) {
+    auth: function (AuthService, $location, $q, $rootScope) {
+      const deferred = $q.defer();
+      if (AuthService.isLoggedIn()) {
+        deferred.resolve();
+      } else {
+        $rootScope.message = { type: 'error', text: 'Authentication required. Please log in.' };
+        AuthService.setIntendedRoute($location.path());
         $location.path('/login');
-        return false;
+        deferred.reject();
       }
-      return true;
+      return deferred.promise;
     }
   };
 
   // Route guard: requires admin role
   const requireAdmin = {
-    auth: function (AuthService, $location) {
+    auth: function (AuthService, $location, $q, $rootScope) {
+      const deferred = $q.defer();
       const user = AuthService.getUser();
-      if (!user || user.role !== 'admin') {
-        alert("Access denied. Admin privileges required.");
-        $location.path('/');
-        return false;
+      if (AuthService.isLoggedIn() && user && user.role === 'admin') {
+        deferred.resolve();
+      } else {
+        $rootScope.message = { type: 'error', text: 'Access denied. Admin privileges required.' };
+        if (!AuthService.isLoggedIn()) {
+          AuthService.setIntendedRoute($location.path());
+          $location.path('/login');
+        } else {
+          $location.path('/');
+        }
+        deferred.reject();
       }
-      return true;
+      return deferred.promise;
     }
   };
 
   // Route guard: requires seller or admin role
   const requireSeller = {
-    auth: function (AuthService, $location) {
+    auth: function (AuthService, $location, $q, $rootScope) {
+      const deferred = $q.defer();
       const user = AuthService.getUser();
-      if (!user || (user.role !== 'seller' && user.role !== 'admin')) {
-        alert("Access denied. Seller privileges required.");
-        $location.path('/');
-        return false;
+      if (AuthService.isLoggedIn() && user && (user.role === 'seller' || user.role === 'admin')) {
+        deferred.resolve();
+      } else {
+        $rootScope.message = { type: 'error', text: 'Access denied. Seller privileges required.' };
+        if (!AuthService.isLoggedIn()) {
+          AuthService.setIntendedRoute($location.path());
+          $location.path('/login');
+        } else {
+          $location.path('/');
+        }
+        deferred.reject();
       }
-      return true;
+      return deferred.promise;
     }
   };
 

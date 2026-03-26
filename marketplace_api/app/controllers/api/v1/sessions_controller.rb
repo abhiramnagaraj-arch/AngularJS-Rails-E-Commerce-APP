@@ -23,7 +23,7 @@ module Api
           render json: { error: 'Invalid Email or password.' }, status: :unauthorized
         end
       end
-
+      
       private
 
       def respond_with(resource, _opts = {})
@@ -42,7 +42,7 @@ module Api
         }, status: :ok
       end
 
-      def respond_to_on_destroy
+      def respond_to_on_destroy(resource = nil)
         render json: { message: 'Logged out successfully' }, status: :ok
       end
     end
