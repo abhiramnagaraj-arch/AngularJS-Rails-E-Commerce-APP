@@ -35,18 +35,20 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.7.0/vanilla-tilt.min.js"></script>
 
   <!-- Modular JS Application -->
-  <script src="js/app.js?v=2026_03_17_v1"></script>
-  <script src="js/constants.js"></script>
-  <script src="js/services/auth-service.js"></script>
-  <script src="js/services/cart-service.js"></script>
-  <script src="js/directives/file-model.js"></script>
-  <script src="js/controllers/main-controller.js"></script>
-  <script src="js/controllers/auth-controllers.js"></script>
-  <script src="js/controllers/product-controllers.js"></script>
-  <script src="js/controllers/cart-controller.js"></script>
-  <script src="js/controllers/orders-controller.js"></script>
-  <script src="js/controllers/seller-controller.js"></script>
-  <script src="js/controllers/admin-controller.js"></script>
+  <script src="js/app.js?v=v2026_03_27_v2"></script>
+  <script src="js/constants.js?v=v2026_03_27_v2"></script>
+  <script src="js/services/auth-service.js?v=v2026_03_27_v2"></script>
+  <script src="js/services/auth-interceptor.js?v=v2026_03_27_v2"></script>
+  <script src="js/services/cart-service.js?v=v2026_03_27_v2"></script>
+  <script src="js/directives/file-model.js?v=v2026_03_27_v2"></script>
+  <script src="js/controllers/main-controller.js?v=v2026_03_27_v2"></script>
+  <script src="js/controllers/auth-controllers.js?v=v2026_03_27_v2"></script>
+  <script src="js/controllers/product-controllers.js?v=v2026_03_27_v2"></script>
+  <script src="js/controllers/cart-controller.js?v=v2026_03_27_v2"></script>
+  <script src="js/controllers/orders-controller.js?v=v2026_03_27_v2"></script>
+  <script src="js/controllers/seller-controller.js?v=v2026_03_27_v2"></script>
+  <script src="js/controllers/admin-controller.js?v=v2026_03_27_v2"></script>
+  <script src="js/directives/cart-sidebar.js?v=v2026_03_27_v2"></script>
 </head>
 
 <body ng-controller="MainController" ng-cloak>
@@ -57,8 +59,11 @@
   <!-- Included Navbar -->
   <div ng-include="'views/layout/navbar.html'"></div>
 
+  <!-- Sticky Cart Sidebar -->
+  <cart-sidebar></cart-sidebar>
+
   <!-- Main View Content -->
-  <main class="py-4" style="position: relative; z-index: 1;">
+  <main class="py-4 main-content" ng-class="{'cart-open-shift': isCartOpen}" style="position: relative; z-index: 1;">
     <div ng-view></div>
   </main>
 

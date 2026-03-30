@@ -36,7 +36,7 @@ class Api::V1::OrdersController < ApplicationController
       end
     end
 
-    amount_in_paise = cart.cart_items.sum { |item| item.product.price * item.quantity } * 100
+    amount_in_paise = (cart.total_amount * 100).to_i
 
     razorpay_order = RazorpayService.create_order(
       amount_in_paise,
@@ -86,10 +86,9 @@ class Api::V1::OrdersController < ApplicationController
         end
 
         # Create Order
-        total_amount = cart.cart_items.sum { |item| item.product.price * item.quantity }
         order = current_user.orders.create!(
           shipping_address_id: address.id,
-          total_amount: total_amount,
+          total_amount: cart.total_amount,
           status: :paid,
           payment_status: :paid,
           payment_method: params[:payment_method] || 'Online',
@@ -104,13 +103,10 @@ class Api::V1::OrdersController < ApplicationController
           product.lock!
           product.update!(stock_quantity: product.stock_quantity - item.quantity)
 
-          commission = item.product.price * 0.1 * item.quantity
           order.order_items.create!(
             product: product,
             seller: product.seller,
             quantity: item.quantity,
-            price_at_purchase: product.price,
-            commission_amount: commission,
             status: :pending
           )
         end
@@ -152,11 +148,9 @@ class Api::V1::OrdersController < ApplicationController
           end
         end
 
-        total_amount = @cart.cart_items.sum { |item| item.product.price * item.quantity }
-        
         @order = current_user.orders.create!(
           shipping_address_id: @address.id,
-          total_amount: total_amount, 
+          total_amount: @cart.total_amount, 
           status: :pending, 
           payment_status: :unpaid,
           payment_method: 'COD'
@@ -167,14 +161,10 @@ class Api::V1::OrdersController < ApplicationController
           product.lock!
           product.update!(stock_quantity: product.stock_quantity - item.quantity)
 
-          commission = product.price * 0.1 * item.quantity
-
           @order.order_items.create!(
             product: product,
             seller: product.seller,
             quantity: item.quantity,
-            price_at_purchase: product.price,
-            commission_amount: commission,
             status: :pending
           )
         end

@@ -97,7 +97,7 @@
         <div class="col-md-2">
             <div class="card bg-glass border-info border-1 p-4 h-100 animate-on-scroll card-impact-glow">
                 <p class="x-small fw-bold text-muted text-uppercase letter-spacing-1 mb-2">Categories</p>
-                <h2 class="text-info-glow fw-bold mb-1">12</h2>
+                <h2 class="text-info-glow fw-bold mb-1">{{stats.total_categories || 0}}</h2>
                 <div class="impact-ring-small bg-info"></div>
             </div>
         </div>
@@ -310,7 +310,7 @@
                     </tr>
                 </thead>
                 <tbody class="stagger-children">
-                    <tr ng-repeat="product in allProducts | filter: { name: searchProduct.name, category_id: searchProduct.category_id || undefined }"
+                    <tr ng-repeat="product in allProducts | filter: customProductCatalogFilter"
                         class="border-bottom border-white-5 transition-smooth">
                         <td class="ps-4 py-3">
                             <div class="d-flex align-items-center">

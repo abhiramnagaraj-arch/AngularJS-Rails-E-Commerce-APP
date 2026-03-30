@@ -1,19 +1,33 @@
-angular.module("marketplaceApp").controller("MainController", function ($scope, $location, AuthService, $http, CartService) {
+angular.module("marketplaceApp").controller("MainController", function ($scope, $location, AuthService, $http, CartService, $rootScope, $timeout) {
   $scope.isLoggedIn = AuthService.isLoggedIn();
   $scope.currentUser = AuthService.getUser();
   $scope.cartCount = 0;
   $scope.categories = [];
-  $scope.searchQuery = "";
+  $scope.searchData = { query: "" };
+
+  // Notification handling
+  $rootScope.$watch('message', function (newMsg) {
+    if (newMsg) {
+      $timeout(function () {
+        $rootScope.message = null;
+      }, 5000);
+    }
+  });
 
   $scope.onSearch = function (event) {
     if (event.keyCode === 13) { // Enter key pressed
-      if ($scope.searchQuery) {
-        $location.path("/products").search({ query: $scope.searchQuery });
+      if ($scope.searchData.query) {
+        $location.path("/products").search({ query: $scope.searchData.query });
       } else {
         $location.path("/products").search({});
       }
     }
   };
+
+  // Sync search bar with URL params
+  $scope.$on('$routeChangeSuccess', function() {
+    $scope.searchData.query = $location.search().query || "";
+  });
 
   const fetchCategories = () => {
     $http.get(`${window.API_BASE}/categories`).then(res => $scope.categories = res.data);
@@ -21,14 +35,12 @@ angular.module("marketplaceApp").controller("MainController", function ($scope, 
   fetchCategories();
 
   $scope.isRole = function (role) {
-    return $scope.currentUser && $scope.currentUser.role === role;
+    const user = AuthService.getUser();
+    return user && user.role === role;
   };
 
   $scope.logout = function () {
     AuthService.logout();
-    $scope.isLoggedIn = false;
-    $scope.currentUser = null;
-    $location.path("/");
   };
 
   $scope.$on("authChanged", function () {
@@ -39,6 +51,8 @@ angular.module("marketplaceApp").controller("MainController", function ($scope, 
     } else {
       $scope.cartCount = 0;
     }
+    // Force UI refresh
+    if (!$scope.$$phase) $scope.$apply();
   });
 
   $scope.$on("cartUpdated", function (event, data) {

@@ -64,18 +64,21 @@
 
             <!-- Delivery Address Section -->
             <div class="card bg-glass border-subtle rounded-4 mt-5 animate-on-scroll">
-                <div class="card-header bg-transparent border-subtle p-4 d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold text-white">Delivery Destination</h5>
-                    <button class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold" ng-click="isAddingAddress = !isAddingAddress">
-                        {{isAddingAddress ? 'Cancel' : '+ Add Address'}}
-                    </button>
+                <div class="card-header bg-transparent border-subtle p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-bold text-white letter-spacing-1">Delivery Destination</h5>
+                        <button class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold" ng-click="toggleAddAddress()">
+                            {{viewState.isAddingAddress ? 'Cancel' : '+ Add Address'}}
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body p-4">
-                    <div class="row g-3" ng-show="!isAddingAddress">
+                    <div class="row g-3">
                         <div class="col-md-6" ng-repeat="address in addresses">
                             <div class="address-card p-3 rounded-4 border-2 border transition-smooth" 
                                 ng-class="selectedAddressId === address.id ? 'border-primary bg-primary-subtle-glow' : 'border-subtle bg-white-5'"
-                                ng-click="$parent.selectedAddressId = address.id">
+                                ng-click="$parent.selectedAddressId = address.id"
+                                style="cursor: pointer;">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                     <div class="d-flex align-items-center">
                                         <div class="form-check m-0 h4">
@@ -84,14 +87,13 @@
                                         <span class="fw-bold text-white ms-2">{{address.name}}</span>
                                         <span ng-if="address.is_default" class="badge bg-secondary ms-2 x-small">Default</span>
                                     </div>
-                                    <div class="dropdown">
-                                        <button class="btn btn-link btn-sm p-0 text-muted" type="button" data-bs-toggle="dropdown">
-                                            <i class="bi bi-three-dots-vertical"></i>
+                                    <div class="d-flex btn-group-sm">
+                                        <button class="btn btn-outline-info btn-sm p-1 px-2 me-1 rounded-pill" ng-click="startEditAddress(address); $event.stopPropagation()" title="Edit Address">
+                                            <i class="bi bi-pencil-square me-1"></i>Edit
                                         </button>
-                                        <ul class="dropdown-menu dropdown-menu-dark">
-                                            <li><a class="dropdown-item small" href="" ng-click="startEditAddress(address)">Edit</a></li>
-                                            <li><a class="dropdown-item small text-danger" href="" ng-click="deleteAddress(address.id)">Delete</a></li>
-                                        </ul>
+                                        <button class="btn btn-outline-danger btn-sm p-1 px-2 rounded-pill" ng-click="deleteAddress(address.id); $event.stopPropagation()" title="Delete Address">
+                                            <i class="bi bi-trash3 me-1"></i>Del
+                                        </button>
                                     </div>
                                 </div>
                                 <div class="small text-muted ps-4">
@@ -102,14 +104,20 @@
                             </div>
                         </div>
 
-                        <div class="col-12 py-4 text-center text-muted border border-dashed rounded-4" ng-show="addresses.length === 0">
+                        <div class="col-12 py-4 text-center text-muted border border-dashed rounded-4" ng-show="addresses.length === 0 && !viewState.isAddingAddress">
                             No saved addresses. Please add a destination for your cosmic delivery.
                         </div>
                     </div>
 
+                    <!-- Add/Edit Address Form Anchor -->
+                    <div class="address-form-anchor mt-4"></div>
+
                     <!-- Add Address Form -->
-                    <div class="bg-white-5 p-4 rounded-4 border border-subtle" ng-show="isAddingAddress">
-                        <h6 class="fw-bold mb-4 text-white">New Destination Details</h6>
+                    <div class="bg-white-5 p-4 rounded-4 border border-glow mt-4" ng-show="viewState.isAddingAddress">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h6 class="fw-bold mb-0 text-white">{{newAddress.id ? 'Edit Destination Details' : 'New Destination Details'}}</h6>
+                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" ng-click="cancelEditAddress()">Cancel</button>
+                        </div>
                         <form ng-submit="saveAddress()" class="row g-4">
                             <div class="col-md-6">
                                 <label class="form-label x-small fw-bold text-muted text-uppercase">Full Name</label>
@@ -136,7 +144,9 @@
                                 <input type="text" class="form-control bg-transparent text-white border-subtle" ng-model="newAddress.zip" pattern="[0-9]{6}" maxlength="6" required>
                             </div>
                             <div class="col-12 text-end">
-                                <button type="submit" class="btn btn-primary px-4 rounded-pill fw-bold">Save Destination</button>
+                                <button type="submit" class="btn btn-primary px-4 rounded-pill fw-bold">
+                                    {{newAddress.id ? 'Update Destination' : 'Save Destination'}}
+                                </button>
                             </div>
                         </form>
                     </div>

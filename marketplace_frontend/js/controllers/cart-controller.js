@@ -21,29 +21,30 @@ angular.module("marketplaceApp").controller("CartController", function ($scope, 
     CartService.fetchCart();
   };
   
+  $scope.viewState = {
+    isAddingAddress: false
+  };
+
   fetchCart();
   fetchAddresses();
 
   $scope.saveAddress = function () {
-    if ($scope.newAddress.id) {
-      $http.put(`${window.API_BASE}/addresses/${$scope.newAddress.id}`, { address: $scope.newAddress }).then(res => {
-        fetchAddresses();
-        $scope.selectedAddressId = res.data.id;
-        $scope.newAddress = {};
-        $scope.isAddingAddress = false;
-      }).catch(err => alert("Failed to update address"));
-    } else {
-      $http.post(`${window.API_BASE}/addresses`, { address: $scope.newAddress }).then(res => {
-        fetchAddresses();
-        $scope.selectedAddressId = res.data.id;
-        $scope.newAddress = {};
-        $scope.isAddingAddress = false;
-      }).catch(err => alert("Failed to save address"));
-    }
+    const isEdit = !!$scope.newAddress.id;
+    const url = isEdit ? `${window.API_BASE}/addresses/${$scope.newAddress.id}` : `${window.API_BASE}/addresses`;
+    const method = isEdit ? 'put' : 'post';
+
+    $http[method](url, { address: $scope.newAddress }).then(res => {
+      fetchAddresses();
+      $scope.selectedAddressId = res.data.id;
+      $scope.cancelEditAddress();
+    }).catch(err => {
+      console.error("Save address error:", err);
+      alert("Failed to save address: " + (err.data && err.data.errors ? err.data.errors.join(", ") : "Unknown error"));
+    });
   };
 
   $scope.deleteAddress = function (id) {
-    if (confirm("Are you sure you want to delete this address?")) {
+    if (confirm("Are you sure you want to delete this address? This action cannot be undone.")) {
       $http.delete(`${window.API_BASE}/addresses/${id}`).then(() => {
         fetchAddresses();
         if ($scope.selectedAddressId === id) $scope.selectedAddressId = null;
@@ -52,8 +53,31 @@ angular.module("marketplaceApp").controller("CartController", function ($scope, 
   };
 
   $scope.startEditAddress = function (address) {
+    console.log("[CART] Starting edit for address:", address);
     $scope.newAddress = angular.copy(address);
-    $scope.isAddingAddress = true;
+    $scope.viewState.isAddingAddress = true;
+    
+    // Scroll to form
+    setTimeout(() => {
+      const formEl = document.querySelector('.address-form-anchor');
+      if (formEl) formEl.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
+
+  $scope.cancelEditAddress = function () {
+    console.log("[CART] Cancelling edit/add");
+    $scope.newAddress = {};
+    $scope.viewState.isAddingAddress = false;
+  };
+
+  $scope.toggleAddAddress = function() {
+    console.log("[CART] Toggling add address form");
+    if ($scope.viewState.isAddingAddress) {
+      $scope.cancelEditAddress();
+    } else {
+      $scope.newAddress = {};
+      $scope.viewState.isAddingAddress = true;
+    }
   };
 
   $scope.calculateTotal = function () {
@@ -84,8 +108,9 @@ angular.module("marketplaceApp").controller("CartController", function ($scope, 
   };
 
   $scope.$on("cartUpdated", function(event, data) {
-    if (data && data.fullData) {
-      $scope.cart = data.fullData;
+    if (data && data.items) {
+      $scope.cart.cart_items = data.items;
+      // Recalculate local totals if needed or just use the calculatedTotal function
     }
   });
 

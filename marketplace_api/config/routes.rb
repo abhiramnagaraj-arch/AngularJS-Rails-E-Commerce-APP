@@ -3,18 +3,17 @@ Rails.application.routes.draw do
   namespace :api, defaults: { format: :json } do
     namespace :v1, defaults: { format: :json } do
 
-      devise_for :users,
-        path: 'auth',
-        defaults: { format: :json },
-        path_names: {
-          sign_in: 'login',
-          sign_out: 'logout',
-          registration: 'register'
-        },
-        controllers: {
-          sessions: 'api/v1/sessions',
-          registrations: 'api/v1/registrations'
-        }
+    devise_for :users,
+      path: 'auth',
+      defaults: { format: :json },
+      path_names: {
+        sign_in: 'login',
+        sign_out: 'logout',
+        registration: 'register'
+    },
+      controllers: {
+        registrations: 'api/v1/registrations'
+    }
 
       # Public Endpoints
       resources :categories, only: [:index]

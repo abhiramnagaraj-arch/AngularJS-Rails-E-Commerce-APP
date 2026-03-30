@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_11_095742) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_26_103532) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -62,6 +62,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_11_095742) do
     t.datetime "created_at", null: false
     t.bigint "product_id", null: false
     t.integer "quantity"
+    t.decimal "total_price", precision: 10, scale: 2, default: "0.0"
     t.datetime "updated_at", null: false
     t.index ["cart_id"], name: "index_cart_items_on_cart_id"
     t.index ["product_id"], name: "index_cart_items_on_product_id"
@@ -69,6 +70,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_11_095742) do
 
   create_table "carts", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.decimal "total_amount", precision: 10, scale: 2, default: "0.0"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["user_id"], name: "index_carts_on_user_id"
@@ -111,6 +113,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_11_095742) do
     t.integer "quantity"
     t.bigint "seller_id", null: false
     t.integer "status"
+    t.decimal "total_price", precision: 10, scale: 2, default: "0.0"
     t.datetime "updated_at", null: false
     t.index ["invoice_id"], name: "index_order_items_on_invoice_id"
     t.index ["order_id"], name: "index_order_items_on_order_id"
@@ -166,6 +169,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_11_095742) do
     t.string "bank_name"
     t.datetime "created_at", null: false
     t.string "ifsc_code"
+    t.decimal "net_earning", precision: 10, scale: 2, default: "0.0"
     t.boolean "reactivation_requested", default: false
     t.text "store_description"
     t.string "store_name"

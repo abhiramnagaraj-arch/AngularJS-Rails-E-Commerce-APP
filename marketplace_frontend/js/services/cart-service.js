@@ -9,28 +9,28 @@ angular.module("marketplaceApp").factory("CartService", function ($http, $rootSc
 
     const rawItems = data.cart_items || (Array.isArray(data) ? data : []);
     
-    // Deduplicate by product_id and standardize IDs
+    // STRICT DEDUPLICATION: Use Product ID specifically
     const seen = new Set();
-    cartItems = [];
+    const uniqueItems = [];
     rawItems.forEach(item => {
-      const pid = parseInt(item.product_id);
+      const pid = parseInt(item.product_id || (item.product && item.product.id));
       if (pid && !seen.has(pid)) {
         seen.add(pid);
-        item.product_id = pid; // Standardize
-        cartItems.push(item);
+        item.product_id = pid; // Normalize
+        uniqueItems.push(item);
       }
     });
     
+    cartItems = uniqueItems;
     cartQuantities = {};
     cartItems.forEach(item => {
       cartQuantities[item.product_id] = item.quantity;
     });
 
-    const unifiedData = { cart_items: [...cartItems] };
     $rootScope.$broadcast("cartUpdated", { 
       count: cartItems.length, 
       items: cartItems,
-      fullData: unifiedData 
+      timestamp: timestamp
     });
   };
 
@@ -62,20 +62,22 @@ angular.module("marketplaceApp").factory("CartService", function ($http, $rootSc
       const existing = getCartItemByProductId(product.id);
       if (existing) {
         existing.quantity += quantity;
+        existing.total_price = existing.quantity * product.price; // Add total_price
       } else {
-        // Use a stable structure similar to server response
         cartItems.push({ 
           id: 'temp-' + now, 
           product_id: product.id, 
           quantity: quantity, 
-          product: product 
+          product: product,
+          total_price: quantity * product.price // Add total_price
         });
       }
       updateCartData(cartItems, now);
 
       return $http.post(`${window.API_BASE}/cart/add_item`, { product_id: product.id, quantity: quantity })
         .then(res => {
-          updateCartData(res.data, now);
+          // The server returns the cart object, update with its cart_items
+          updateCartData(res.data.cart_items || res.data, now); 
           return res.data;
         }).catch(err => {
           this.fetchCart(); // Rollback on error
@@ -99,14 +101,16 @@ angular.module("marketplaceApp").factory("CartService", function ($http, $rootSc
       // Optimistic Update
       const oldQty = item.quantity;
       item.quantity = quantity;
+      item.total_price = item.quantity * item.product.price; // Update total_price
       updateCartData(cartItems, now);
 
       return $http.patch(`${window.API_BASE}/cart/update_item/${item.id}`, { quantity: quantity })
         .then(res => {
-          updateCartData(res.data, now);
+          updateCartData(res.data.cart_items || res.data, now);
           return res.data;
         }).catch(err => {
           item.quantity = oldQty; // Rollback
+          item.total_price = item.quantity * item.product.price; // Rollback total_price
           updateCartData(cartItems, now);
           throw err;
         });
@@ -128,7 +132,7 @@ angular.module("marketplaceApp").factory("CartService", function ($http, $rootSc
 
       return $http.delete(`${window.API_BASE}/cart/remove_item/${item.id}`)
         .then(res => {
-          updateCartData(res.data, now);
+          updateCartData(res.data.cart_items || res.data, now);
           return res.data;
         }).catch(err => {
           this.fetchCart(); // Rollback
