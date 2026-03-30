@@ -6,9 +6,35 @@ angular.module("marketplaceApp").controller("AdminController", function ($scope,
   $scope.allOrders = [];
   $scope.showingForm = false;
   $scope.editingProduct = {};
+  $scope.searchProduct = { name: '', category_id: null };
   $scope.allReviews = [];
   $scope.groupedOrders = [];
   $scope.sellerSearch = { store_name: '', onlyReactivation: false };
+
+  $scope.productCategoryFilter = function (product) {
+    if (!$scope.searchProduct.category_id) return true;
+    if (!product.category) return false;
+    
+    // Loose equality for cross-type safety (string from dropdown vs number from API)
+    if (product.category_id == $scope.searchProduct.category_id) return true;
+    
+    // Parent match (if the product belongs to a child of the selected category)
+    if (product.category && product.category.parent_id == $scope.searchProduct.category_id) return true;
+    
+    return false;
+  };
+
+  $scope.customProductCatalogFilter = function (product) {
+    // 1. Name Filter
+    if ($scope.searchProduct.name && product.name) {
+      if (!product.name.toLowerCase().includes($scope.searchProduct.name.toLowerCase())) {
+        return false;
+      }
+    }
+    
+    // 2. Category Filter
+    return $scope.productCategoryFilter(product);
+  };
 
   $scope.orderFilterConfig = {
     viewType: 'global',
@@ -164,11 +190,13 @@ angular.module("marketplaceApp").controller("AdminController", function ($scope,
         flatCategories.push({ id: cat.id, name: cat.name, isParent: true });
         if (cat.subcategories && cat.subcategories.length > 0) {
           cat.subcategories.forEach(sub => {
-            flatCategories.push({ id: sub.id, name: `${cat.name} > ${sub.name}`, isParent: false });
+            // Using Em Space (U+2003) for better visual grouping in the select dropdown
+            flatCategories.push({ id: sub.id, name: " " + sub.name, parentName: cat.name, isParent: false });
           });
         }
       });
       $scope.flatCategories = flatCategories;
+      console.log("[ADMIN] Flat categories populated:", flatCategories.length);
     }).catch(err => console.error("[ADMIN] Error fetching categories:", err));
   };
 

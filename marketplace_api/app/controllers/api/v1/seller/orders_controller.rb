@@ -11,17 +11,20 @@ class Api::V1::Seller::OrdersController < ApplicationController
                    .includes(:buyer, :shipping_address, order_items: { product: :seller })
 
     # We need to filter the serialized output so that ONLY the seller's items are returned
-    render json: @orders.as_json(include: { 
-      buyer: { only: [:id, :email] },
-      shipping_address: {}
-    }).map { |order_hash|
-      db_order = @orders.find { |o| o.id == order_hash['id'] }
-      seller_items = db_order.order_items.select { |item| item.seller_id == seller_id }
+    serialized_orders = @orders.map do |order|
+      order_hash = order.as_json(include: { 
+        buyer: { only: [:id, :email] },
+        shipping_address: {}
+      })
+      
+      seller_items = order.order_items.select { |item| item.seller_id == seller_id }
       
       order_hash['order_items'] = seller_items.as_json(include: { product: { include: :seller } })
       order_hash['seller_total'] = seller_items.sum { |item| item.price_at_purchase * item.quantity }
       order_hash
-    }
+    end
+
+    render json: serialized_orders
   end
 
   def show

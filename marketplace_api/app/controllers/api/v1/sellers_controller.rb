@@ -9,10 +9,24 @@ module Api
 
         authorize! :read, seller
         
+        valid_statuses = [:paid, :shipped, :delivered]
+        
+        # Gross revenue for seller
+        total_sales = OrderItem.joins(:order)
+                               .where(seller: seller, orders: { status: valid_statuses })
+                               .sum(:total_price)
+
+        # Net earnings for seller (total_price - 10% commission)
+        # Note: Already delivered items are in seller.net_earning, 
+        # but we calculate dynamically to include paid/shipped items.
+        total_earnings = OrderItem.joins(:order)
+                                  .where(seller: seller, orders: { status: valid_statuses })
+                                  .sum("total_price - commission_amount")
+
         stats = {
           total_products: seller.products.count,
-          total_sales: OrderItem.where(seller: seller, status: [:shipped, :delivered]).sum('price_at_purchase * quantity'),
-          total_earnings: OrderItem.where(seller: seller, status: [:shipped, :delivered]).sum('price_at_purchase * quantity - commission_amount'),
+          total_sales: total_sales,
+          total_earnings: total_earnings,
           pending_orders: OrderItem.where(seller: seller, status: :pending).count,
           verification_status: seller.verification_status,
           store_name: seller.store_name,
@@ -24,7 +38,7 @@ module Api
       end
 
       def request_reactivation
-        seller = current_user.seller
+                            seller = current_user.seller
         return render json: { error: "No seller profile found" }, status: :not_found unless seller
         authorize! :update, seller
 

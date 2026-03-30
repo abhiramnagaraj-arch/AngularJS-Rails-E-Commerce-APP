@@ -463,3 +463,106 @@ hr {
   border-color: var(--border-subtle) !important;
   color: var(--text-muted) !important;
 }
+
+/* =============================================
+   STICKY CART SIDEBAR
+   ============================================= */
+.cart-sidebar-overlay {
+  display: none; /* Removed overlay to allow background interaction */
+}
+
+.cart-sidebar {
+  position: fixed;
+  top: 0;
+  right: -400px;
+  width: 400px;
+  height: 100vh;
+  background: rgba(13, 27, 42, 0.9); /* More opaque since no overlay */
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border-left: 1px solid var(--border-glow);
+  z-index: 2100;
+  transition: right 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+  display: flex;
+  flex-direction: column;
+  box-shadow: -10px 0 50px rgba(0, 0, 0, 0.5);
+}
+
+.cart-sidebar.open {
+  right: 0;
+}
+
+.cart-sidebar-header {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.cart-sidebar-item {
+  background: transparent;
+  transition: background 0.3s ease;
+}
+
+.cart-sidebar-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.item-img-container img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border: 1px solid var(--border-subtle);
+}
+
+.qty-controls button:hover:not(:disabled) {
+  color: var(--primary) !important;
+  transform: scale(1.2);
+}
+
+.shadow-lg-up {
+  box-shadow: 0 -15px 35px rgba(0, 0, 0, 0.4);
+}
+
+.main-content {
+  transition: margin-right 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+  will-change: margin-right;
+}
+
+.cart-open-shift {
+  margin-right: 400px;
+}
+
+@media (max-width: 991px) {
+  .cart-open-shift {
+    margin-right: 0;
+  }
+}
+
+/* Real-time sync animations */
+.cart-sidebar-item.ng-enter {
+  animation: slideInRight 0.4s ease-out forwards;
+}
+
+.cart-sidebar-item.ng-leave {
+  animation: fadeOut 0.3s ease-in forwards;
+}
+
+/* Mobile Responsive: Bottom Drawer */
+@media (max-width: 576px) {
+  .cart-sidebar {
+    width: 100%;
+    right: 0 !important;
+    left: 0 !important;
+    top: auto;
+    bottom: -100%;
+    height: 80vh;
+    border-left: none;
+    border-top: 1px solid var(--border-glow);
+    border-radius: 20px 20px 0 0;
+    transition: bottom 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+  }
+
+  .cart-sidebar.open {
+    bottom: 0;
+  }
+}
+
+

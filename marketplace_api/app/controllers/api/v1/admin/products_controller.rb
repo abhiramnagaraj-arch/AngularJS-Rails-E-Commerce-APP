@@ -5,7 +5,7 @@ class Api::V1::Admin::ProductsController < Api::V1::Admin::BaseController
     render json: @products.where(active: true).includes(:seller, :category).as_json(
       include: {
         seller: { only: [:id, :store_name] },
-        category: { only: [:id, :name] }
+        category: { only: [:id, :name, :parent_id] }
       },
       methods: [:image_url]
     )

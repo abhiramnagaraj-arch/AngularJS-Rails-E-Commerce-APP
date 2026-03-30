@@ -2,6 +2,9 @@ class Product < ApplicationRecord
   belongs_to :seller
   belongs_to :category
 
+  # searchkick callbacks: false
+
+
   has_one_attached :image
 
   validates :name, presence: true
