@@ -1,9 +1,5 @@
 .git
-log/*
-tmp/*
-public/assets
 node_modules
 .DS_Store
 Dockerfile
-Dockerfile.dev
 .dockerignore

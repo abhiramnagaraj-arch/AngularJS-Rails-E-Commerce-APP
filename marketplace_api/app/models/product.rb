@@ -2,9 +2,6 @@ class Product < ApplicationRecord
   belongs_to :seller
   belongs_to :category
 
-  # searchkick callbacks: false
-
-
   has_one_attached :image
 
   validates :name, presence: true
@@ -13,14 +10,15 @@ class Product < ApplicationRecord
   has_many :reviews, dependent: :destroy
 
   def image_url
-    if image.attached?
+    # Use image_attachment directly to avoid potential recursion with the 'image' method
+    att = image_attachment
+    if att.present?
       options = Rails.application.config.action_mailer.default_url_options
       host = options[:host] || 'localhost'
       port = options[:port]
       full_host = port ? "#{host}:#{port}" : host
       
-      Rails.application.routes.url_helpers.rails_blob_url(image, host: full_host)
+      Rails.application.routes.url_helpers.rails_blob_url(att, host: full_host)
     end
   end
-
 end

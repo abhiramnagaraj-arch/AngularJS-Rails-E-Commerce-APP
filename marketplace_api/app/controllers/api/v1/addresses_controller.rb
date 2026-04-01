@@ -2,7 +2,7 @@ class Api::V1::AddressesController < ApplicationController
   before_action :authenticate_api_v1_user!
 
   def index
-    render json: current_user.addresses
+    render_success(current_user.addresses)
   end
 
   def create
@@ -11,13 +11,13 @@ class Api::V1::AddressesController < ApplicationController
     # If this is the first address or explicitly set to default, make it default
     if @address.is_default || current_user.addresses.count == 0
       @address.is_default = true
-      current_user.addresses.update_all(is_default: false)
+      current_user.addresses.where.not(id: @address.id).update_all(is_default: false)
     end
 
     if @address.save
-      render json: @address, status: :created
+      render_success(@address, "Address created", :created)
     else
-      render json: { errors: @address.errors.full_messages }, status: :unprocessable_entity
+      render_error("Failed to create address", @address.errors.full_messages)
     end
   end
 
@@ -35,9 +35,9 @@ class Api::V1::AddressesController < ApplicationController
     end
 
     if @address.update(address_params)
-      render json: @address
+      render_success(@address, "Address updated")
     else
-      render json: { errors: @address.errors.full_messages }, status: :unprocessable_entity
+      render_error("Failed to update address", @address.errors.full_messages)
     end
   end
 

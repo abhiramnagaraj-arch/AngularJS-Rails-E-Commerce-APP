@@ -29,7 +29,7 @@
                                 <h6 class="mb-1 fw-bold text-white">{{item.product.name}}</h6>
                                 <p class="text-muted small mb-0">Sold by {{item.product.seller.store_name}}</p>
                                 <div class="d-md-none mt-2">
-                                    <span class="price-tag">₹{{item.product.price}}</span>
+                                    <span class="price-tag">₹{{item.product.price | number:2}}</span>
                                 </div>
                             </div>
                             <div class="col-md-auto text-md-center">
@@ -48,7 +48,7 @@
                                 </div>
                             </div>
                             <div class="col-md-auto d-none d-md-block min-w-100 text-end">
-                                <span class="price-tag fs-5">₹{{item.product.price * item.quantity}}</span>
+                                <span class="price-tag fs-5">₹{{(item.product.price * item.quantity) | number:2}}</span>
                             </div>
                             <div class="col-auto">
                                 <button class="btn btn-sm btn-outline-danger border-0 rounded-circle p-2" ng-click="removeItem(item)" title="Remove item">
@@ -200,7 +200,7 @@
                 
                 <div class="d-flex justify-content-between mb-3">
                     <span class="text-muted">Quantum Subtotal</span>
-                    <span class="text-white">₹{{calculateTotal()}}</span>
+                    <span class="text-white">₹{{calculateTotal() | number:2}}</span>
                 </div>
                 <div class="d-flex justify-content-between mb-4">
                     <span class="text-muted">Delivery Protocol</span>
@@ -211,7 +211,7 @@
                     <div class="d-flex justify-content-between align-items-end">
                         <span class="text-muted fw-bold">TOTAL AMOUNT</span>
                         <div class="text-end">
-                            <h2 class="price-tag mb-0">₹{{calculateTotal()}}</h2>
+                            <h2 class="price-tag mb-0">₹{{calculateTotal() | number:2}}</h2>
                         </div>
                     </div>
                 </div>

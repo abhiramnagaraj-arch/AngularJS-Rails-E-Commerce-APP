@@ -7,7 +7,7 @@ angular.module("marketplaceApp").controller("CartController", function ($scope, 
 
   const fetchAddresses = function () {
     $http.get(`${window.API_BASE}/addresses`).then(res => {
-      $scope.addresses = res.data;
+      $scope.addresses = res.data.data || res.data;
       const defaultAddr = $scope.addresses.find(a => a.is_default);
       if (defaultAddr) {
         $scope.selectedAddressId = defaultAddr.id;
@@ -35,7 +35,7 @@ angular.module("marketplaceApp").controller("CartController", function ($scope, 
 
     $http[method](url, { address: $scope.newAddress }).then(res => {
       fetchAddresses();
-      $scope.selectedAddressId = res.data.id;
+      $scope.selectedAddressId = (res.data.data ? res.data.data.id : res.data.id);
       $scope.cancelEditAddress();
     }).catch(err => {
       console.error("Save address error:", err);
@@ -81,7 +81,8 @@ angular.module("marketplaceApp").controller("CartController", function ($scope, 
   };
 
   $scope.calculateTotal = function () {
-    return $scope.cart.cart_items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+    const total = $scope.cart.cart_items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+    return Math.round(total * 100) / 100;
   };
 
   $scope.updateQuantity = function (item) {
@@ -141,7 +142,7 @@ angular.module("marketplaceApp").controller("CartController", function ($scope, 
       address_id: $scope.selectedAddressId,
       payment_method: 'Online'
     }).then(res => {
-      const orderData = res.data;
+      const orderData = res.data.data || res.data;
 
       // 2. Configure Razorpay Options
       const options = {

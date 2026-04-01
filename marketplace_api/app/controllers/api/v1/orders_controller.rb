@@ -1,42 +1,56 @@
 class Api::V1::OrdersController < ApplicationController
+  include Paginatable
   before_action :authenticate_api_v1_user!
   load_and_authorize_resource except: [:index, :show, :create_razorpay_order, :verify_razorpay_payment, :checkout]
 
   def index
-    @orders = current_user.orders
+    scope = current_user.orders
       .includes(:shipping_address, order_items: :product)
       .order(created_at: :desc)
 
-    render json: @orders.as_json(include: {
+    result = paginate(scope)
+
+    orders_data = result[:data].as_json(include: {
       shipping_address: {},
-      order_items: { include: { product: { only: [:id, :name, :price, :image_url] } } }
+      order_items: { include: { product: { only: [:id, :name, :price], methods: [:image_url, :image] } } }
     })
+
+    render_success(orders_data, "Orders fetched successfully", :ok, meta: result[:meta])
   end
 
   def show
     @order = current_user.orders.find(params[:id])
-    render json: @order.as_json(include: {
+    order_data = @order.as_json(include: {
       shipping_address: {},
-      order_items: { include: { product: { only: [:id, :name, :price, :image_url] } } }
+      order_items: { include: { product: { only: [:id, :name, :price], methods: [:image_url, :image] } } }
     })
+    render_success(order_data)
   end
 
   def create_razorpay_order
     # Ensure address belongs to user
     address = current_user.addresses.find_by(id: params[:address_id])
-    return render json: { error: 'Invalid or missing delivery address' }, status: :unprocessable_entity unless address
+    return render_error('Invalid or missing delivery address') unless address
 
     # Pre-check stock before requesting a Razorpay Order
     cart = current_user.cart
-    return render json: { error: 'Cart is empty' }, status: :unprocessable_entity if cart.nil? || cart.cart_items.empty?
+    return render_error('Cart is empty') if cart.nil? || cart.cart_items.empty?
 
-    cart.cart_items.each do |item|
+    cart.cart_items.includes(:product).each do |item|
+      if item.product.price != item.product.reload.price
+        changed_items = cart.cart_items.includes(:product).select { |i| i.product.price != i.product.reload.price }
+        return render_error(
+          "Prices have changed. Please review your cart before placing the order.",
+          changed_items.map { |i| { product_id: i.product.id, product_name: i.product.name, new_price: i.product.price } }
+        )
+      end
+
       if item.product.stock_quantity < item.quantity
-        return render json: { error: "Insufficient stock for #{item.product.name}" }, status: :unprocessable_entity
+        return render_error("Insufficient stock for #{item.product.name}")
       end
     end
 
-    amount_in_paise = (cart.total_amount * 100).to_i
+    amount_in_paise = (cart.total_price * 100).to_i
 
     razorpay_order = RazorpayService.create_order(
       amount_in_paise,
@@ -49,21 +63,21 @@ class Api::V1::OrdersController < ApplicationController
     )
 
     if razorpay_order
-      render json: { 
+      render_success({ 
         id: razorpay_order.id,
         amount: razorpay_order.amount,
         currency: razorpay_order.currency,
         key_id: ENV['RAZORPAY_KEY_ID']
-      }
+      })
     else
-      render json: { error: 'Failed to initialize payment gateway' }, status: :service_unavailable
+      render_error('Failed to initialize payment gateway', [], :service_unavailable)
     end
   end
 
   def verify_razorpay_payment
     # 1. Verify Address first
     address = current_user.addresses.find_by(id: params[:address_id])
-    return render json: { error: 'Invalid or missing delivery address' }, status: :unprocessable_entity unless address
+    return render_error('Invalid or missing delivery address') unless address
 
     # 2. Verify Razorpay Signature
     success = RazorpayService.verify_signature({
@@ -75,7 +89,7 @@ class Api::V1::OrdersController < ApplicationController
     if success
       # Find user and cart
       cart = current_user.cart
-      return render json: { error: 'Cart is empty' }, status: :unprocessable_entity if cart.nil? || cart.cart_items.empty?
+      return render_error('Cart is empty') if cart.nil? || cart.cart_items.empty?
 
       ActiveRecord::Base.transaction do
         # Check for stock again before finalizing
@@ -88,7 +102,7 @@ class Api::V1::OrdersController < ApplicationController
         # Create Order
         order = current_user.orders.create!(
           shipping_address_id: address.id,
-          total_amount: cart.total_amount,
+          total_amount: cart.total_price,
           status: :paid,
           payment_status: :paid,
           payment_method: params[:payment_method] || 'Online',
@@ -107,19 +121,21 @@ class Api::V1::OrdersController < ApplicationController
             product: product,
             seller: product.seller,
             quantity: item.quantity,
-            status: :pending
+            status: :pending,
+            price_at_purchase: product.price,
+            total_price: product.price * item.quantity
           )
         end
 
         # Clear Cart
         cart.cart_items.destroy_all
-        render json: { message: 'Order placed successfully', order: order }, status: :created
+        render_success({ order: order }, 'Order placed successfully', :created)
       end
     else
-      render json: { error: 'Invalid payment signature' }, status: :bad_request
+      render_error('Invalid payment signature', [], :bad_request)
     end
   rescue StandardError => e
-    render json: { error: e.message }, status: :unprocessable_entity
+    render_error(e.message)
   end
 
   def checkout
@@ -129,19 +145,30 @@ class Api::V1::OrdersController < ApplicationController
     
     allowed_methods = ['COD']
     unless allowed_methods.include?(params[:payment_method])
-      return render json: { error: "Invalid payment method. This endpoint only accepts: #{allowed_methods.join(', ')}" }, status: :unprocessable_entity
+      return render_error("Invalid payment method. This endpoint only accepts: #{allowed_methods.join(', ')}")
     end
 
     # Simple COD flow (No Stripe involved)
     @cart = current_user.cart
-    return render json: { error: 'Cart is empty' }, status: :unprocessable_entity if @cart.nil? || @cart.cart_items.empty?
+    return render_error('Cart is empty') if @cart.nil? || @cart.cart_items.empty?
 
     @address = current_user.addresses.find_by(id: params[:address_id])
-    return render json: { error: 'Invalid or missing delivery address' }, status: :unprocessable_entity unless @address
+    return render_error('Invalid or missing delivery address') unless @address
 
     begin
       ActiveRecord::Base.transaction do
-        # 1. Pre-check stock for ALL items before doing any updates
+        # 1. Price check and Stock check
+        changed_items = @cart.cart_items.includes(:product).select do |item|
+          item.product.price != item.product.reload.price
+        end
+
+        if changed_items.any?
+          return render_error(
+            "Prices have changed. Please review your cart before placing the order.",
+            changed_items.map { |item| { product_id: item.product.id, product_name: item.product.name, new_price: item.product.price } }
+          )
+        end
+
         @cart.cart_items.each do |item|
           if item.product.stock_quantity < item.quantity
             raise StandardError, "Insufficient stock for #{item.product.name}. Available: #{item.product.stock_quantity}"
@@ -150,7 +177,7 @@ class Api::V1::OrdersController < ApplicationController
 
         @order = current_user.orders.create!(
           shipping_address_id: @address.id,
-          total_amount: @cart.total_amount, 
+          total_amount: @cart.total_price, 
           status: :pending, 
           payment_status: :unpaid,
           payment_method: 'COD'
@@ -165,15 +192,17 @@ class Api::V1::OrdersController < ApplicationController
             product: product,
             seller: product.seller,
             quantity: item.quantity,
-            status: :pending
+            status: :pending,
+            price_at_purchase: product.price,
+            total_price: product.price * item.quantity
           )
         end
 
         @cart.cart_items.destroy_all
-        render json: { order: @order, message: "Order placed successfully (Cash on Delivery)" }, status: :created
+        render_success({ order: @order }, "Order placed successfully (Cash on Delivery)", :created)
       end
     rescue StandardError => e
-      render json: { error: e.message }, status: :unprocessable_entity
+      render_error(e.message)
     end
   end
 end

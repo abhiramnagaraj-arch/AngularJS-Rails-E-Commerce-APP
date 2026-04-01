@@ -3,7 +3,7 @@ class Cart < ApplicationRecord
   has_many :cart_items, dependent: :destroy
   has_many :products, through: :cart_items
 
-  def update_total!
-    update(total_amount: cart_items.sum(:total_price))
+  def total_price
+    cart_items.includes(:product).sum { |item| item.total_price }
   end
 end

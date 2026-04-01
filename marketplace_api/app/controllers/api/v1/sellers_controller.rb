@@ -5,7 +5,7 @@ module Api
       
       def stats
         seller = current_user.seller
-        return render json: { error: "No seller profile found" }, status: :not_found unless seller
+        return render_error("No seller profile found", [], :not_found) unless seller
 
         authorize! :read, seller
         
@@ -34,27 +34,27 @@ module Api
           reactivation_requested: seller.reactivation_requested
         }
         
-        render json: stats
+        render_success(stats)
       end
 
       def request_reactivation
                             seller = current_user.seller
-        return render json: { error: "No seller profile found" }, status: :not_found unless seller
+        return render_error("No seller profile found", [], :not_found) unless seller
         authorize! :update, seller
 
         unless seller.suspended
-          return render json: { error: "Reactivation can only be requested for suspended accounts" }, status: :unprocessable_entity
+          return render_error("Reactivation can only be requested for suspended accounts")
         end
 
         if seller.update(reactivation_requested: true)
-          render json: { message: "Reactivation requested successfully", seller: seller }
+          render_success(seller, "Reactivation requested successfully")
         else
-          render json: { errors: seller.errors.full_messages }, status: :unprocessable_entity
+          render_error("Failed to request reactivation", seller.errors.full_messages)
         end
       end
 
       def create
-        return render json: { error: "Already a seller" }, status: :unprocessable_entity if current_user.seller.present?
+        return render_error("Already a seller") if current_user.seller.present?
 
         @seller = current_user.build_seller(seller_params)
         @seller.verification_status = 'approved' if current_user.admin?
@@ -63,21 +63,18 @@ module Api
         if @seller.save
           current_user.update(role: :seller) if current_user.buyer?
 
-          render json: {
-            message: "Seller profile created successfully",
-            seller: @seller
-          }, status: :created
+          render_success(@seller, "Seller profile created successfully", :created)
         else
-          render json: { errors: @seller.errors.full_messages }, status: :unprocessable_entity
+          render_error("Failed to create profile", @seller.errors.full_messages)
         end
       end
 
       def billing
         seller = current_user.seller
-        return render json: { error: "No seller profile found" }, status: :not_found unless seller
+        return render_error("No seller profile found", [], :not_found) unless seller
         authorize! :billing, seller
 
-        render json: {
+        render_success({
           invoices: seller.invoices.order(billing_date: :desc),
           bank_details: {
             bank_name: seller.bank_name,
@@ -85,18 +82,18 @@ module Api
             ifsc_code: seller.ifsc_code,
             account_holder_name: seller.account_holder_name
           }
-        }
+        })
       end
 
       def update_bank_details
         seller = current_user.seller
-        return render json: { error: "No seller profile found" }, status: :not_found unless seller
+        return render_error("No seller profile found", [], :not_found) unless seller
         authorize! :update_bank_details, seller
 
         if seller.update(bank_params)
-          render json: { message: "Bank details updated successfully", seller: seller }
+          render_success(seller, "Bank details updated successfully")
         else
-          render json: { errors: seller.errors.full_messages }, status: :unprocessable_entity
+          render_error("Failed to update bank details", seller.errors.full_messages)
         end
       end
 

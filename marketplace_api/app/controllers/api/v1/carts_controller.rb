@@ -4,12 +4,15 @@
     authorize_resource class: "Cart"
 
     def show
-      render json: @cart.as_json(
-        methods: [:total_amount], 
+      render_success(@cart.as_json(
+        methods: [:total_price], 
         include: { 
-          cart_items: { methods: [:total_price], include: :product } 
+          cart_items: { 
+            methods: [:total_price], 
+            include: { product: { methods: [:image_url, :image] } }
+          } 
         }
-      )
+      ))
     end
 
     def add_item
@@ -26,9 +29,17 @@
       cart_item.quantity = new_total_quantity
       
       if cart_item.save
-        render json: @cart.as_json(methods: [:total_amount], include: { cart_items: { methods: [:total_price], include: :product } }), status: :ok
+        render_success(@cart.as_json(
+          methods: [:total_price], 
+          include: { 
+            cart_items: { 
+              methods: [:total_price], 
+              include: { product: { methods: [:image_url, :image] } }
+            } 
+          }
+        ), "Item added to cart")
       else
-        render json: { errors: cart_item.errors.full_messages }, status: :unprocessable_entity
+        render_error("Failed to add item", cart_item.errors.full_messages)
       end
     end
 
@@ -38,7 +49,15 @@
 
       if requested_quantity <= 0
         cart_item.destroy
-        return render json: @cart.as_json(methods: [:total_amount], include: { cart_items: { methods: [:total_price], include: :product } })
+        return render_success(@cart.as_json(
+          methods: [:total_price], 
+          include: { 
+            cart_items: { 
+              methods: [:total_price], 
+              include: { product: { methods: [:image_url, :image] } }
+            } 
+          }
+        ), "Item removed")
       end
 
       if requested_quantity > cart_item.product.stock_quantity
@@ -46,21 +65,39 @@
       end
 
       if cart_item.update(quantity: requested_quantity)
-        render json: @cart.as_json(methods: [:total_amount], include: { cart_items: { methods: [:total_price], include: :product } })
+        render_success(@cart.as_json(
+          methods: [:total_price], 
+          include: { 
+            cart_items: { 
+              methods: [:total_price], 
+              include: { product: { methods: [:image_url, :image] } }
+            } 
+          }
+        ), "Quantity updated")
       else
-        render json: { errors: cart_item.errors.full_messages }, status: :unprocessable_entity
+        render_error("Failed to update quantity", cart_item.errors.full_messages)
       end
     end
 
     def remove_item
       cart_item = @cart.cart_items.find(params[:id])
       cart_item.destroy
-      render json: @cart.as_json(methods: [:total_amount], include: { cart_items: { methods: [:total_price], include: :product } })
+      render_success(@cart.as_json(
+        methods: [:total_price], 
+        include: { 
+          cart_items: { 
+            methods: [:total_price], 
+            include: { product: { methods: [:image_url, :image] } }
+          } 
+        }
+      ), "Item removed")
     end
 
     private
 
     def set_cart
       @cart = current_user.cart || current_user.create_cart!
+      # Eager load items and products to avoid N+1
+      @cart = Cart.includes(cart_items: :product).find(@cart.id)
     end
   end

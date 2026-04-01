@@ -8,12 +8,13 @@ angular.module("marketplaceApp").controller("LoginController", function ($scope,
   $scope.login = function () {
     $http.post(`${window.API_BASE}/auth/login`, { user: $scope.credentials })
       .then(res => {
-        const token = res.headers("authorization") || res.data.token;
+        const body = res.data.data || res.data;
+        const token = res.headers("authorization") || body.token;
         if (token) {
           AuthService.saveToken(token);
         }
-        if (res.data && res.data.user) {
-          AuthService.saveUser(res.data.user);
+        if (body && body.user) {
+          AuthService.saveUser(body.user);
         }
         
         $rootScope.message = { type: 'success', text: 'Logged in successfully!' };
@@ -27,7 +28,7 @@ angular.module("marketplaceApp").controller("LoginController", function ($scope,
         }
 
         // 2. Default role-based redirect
-        const user = res.data.user;
+        const user = body.user;
         if (user.role === 'admin') {
           $location.path("/admin/dashboard");
         } else if (user.role === 'seller') {
@@ -49,12 +50,13 @@ angular.module("marketplaceApp").controller("SignupController", function ($scope
   $scope.signup = function () {
     $http.post(`${window.API_BASE}/auth/register`, { user: $scope.user })
       .then(res => {
-        const token = res.headers("authorization") || res.data.token;
+        const body = res.data.data || res.data;
+        const token = res.headers("authorization") || body.token;
         if (token) {
           AuthService.saveToken(token);
         }
-        if (res.data && res.data.user) {
-          AuthService.saveUser(res.data.user);
+        if (body && body.user) {
+          AuthService.saveUser(body.user);
         }
         
         $rootScope.message = { type: 'success', text: 'Signup successful!' };

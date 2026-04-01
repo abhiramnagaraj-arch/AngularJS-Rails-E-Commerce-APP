@@ -3,7 +3,8 @@ angular.module("marketplaceApp").controller("OrdersController", function ($scope
 
   const fetchOrders = function () {
     $http.get(`${window.API_BASE}/orders`).then(res => {
-      $scope.orders = res.data;
+      // Data is now automatically unwrapped by AuthInterceptor
+      $scope.orders = res.data || [];
     }).catch(err => console.error("Could not fetch orders", err));
   };
   fetchOrders();

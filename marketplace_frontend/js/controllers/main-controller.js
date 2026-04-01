@@ -30,7 +30,10 @@ angular.module("marketplaceApp").controller("MainController", function ($scope, 
   });
 
   const fetchCategories = () => {
-    $http.get(`${window.API_BASE}/categories`).then(res => $scope.categories = res.data);
+    $http.get(`${window.API_BASE}/categories`).then(res => {
+      // Data is now automatically unwrapped by AuthInterceptor
+      $scope.categories = res.data || [];
+    });
   };
   fetchCategories();
 

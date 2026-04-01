@@ -1,42 +1,79 @@
 angular.module("marketplaceApp").controller("ProductsController", function ($scope, $http, $rootScope, AuthService, $routeParams, $location, CartService) {
-  $scope.products = null;
-  $scope.categories = [];
-  $scope.selectedCategory = "";
-  $scope.searchQuery = $routeParams.query || "";
+  $scope.filters = {
+    search: $routeParams.query || "",
+    category_id: "",
+    min_price: null,
+    max_price: null,
+    sort: "newest"
+  };
 
-  const fetchProducts = function () {
-    let url = `${window.API_BASE}/products?`;
-    if ($scope.searchQuery) {
-      url += `query=${encodeURIComponent($scope.searchQuery)}&`;
+  $scope.paginationMeta = {};
+  $scope.page = 1;
+
+  const fetchProducts = function (page) {
+    if (page) $scope.page = page;
+    $scope.products = null; // Immediate loading state
+    let url = `${window.API_BASE}/products?page=${$scope.page}`;
+    
+    // Append filters
+    Object.keys($scope.filters).forEach(key => {
+      const val = $scope.filters[key];
+      if (val !== undefined && val !== null && val !== "") {
+        url += `&${key}=${encodeURIComponent(val)}`;
+      }
+    });
+
+    $http.get(url).then(res => {
+      // Data is now automatically unwrapped by AuthInterceptor
+      $scope.products = res.data || [];
+      $scope.paginationMeta = res.originalMeta || {};
+    });
+  };
+
+  $scope.nextPage = function () {
+    if ($scope.page < $scope.paginationMeta.total_pages) {
+      fetchProducts($scope.page + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-    if ($scope.selectedCategory) {
-      url += `category_id=${$scope.selectedCategory}`;
+  };
+
+  $scope.prevPage = function () {
+    if ($scope.page > 1) {
+      fetchProducts($scope.page - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-    $http.get(url).then(res => $scope.products = res.data);
   };
 
   $http.get(`${window.API_BASE}/categories`).then(res => {
-    $scope.categories = res.data;
+    // Data is now automatically unwrapped by AuthInterceptor
+    $scope.categories = res.data || [];
+    
     if ($routeParams.category) {
       const catName = $routeParams.category.toLowerCase();
       const found = $scope.categories.find(c => c.name.toLowerCase().includes(catName));
       if (found) {
-        $scope.selectedCategory = found.id;
+        $scope.filters.category_id = found.id;
       }
     }
   }).finally(() => {
     fetchProducts();
   });
 
+  $scope.fetchProducts = () => fetchProducts(1);
+
+  $scope.resetFilters = function () {
+    $scope.filters = {
+      search: "",
+      category_id: "",
+      min_price: null,
+      max_price: null,
+      sort: "newest"
+    };
+    $scope.fetchProducts();
+  };
+
   $scope.filterProducts = function () {
-    const cat = $scope.categories.find(c => c.id === $scope.selectedCategory);
-    $location.search('query', null); // Clear text search
-    if (cat) {
-      $location.search('category', cat.name);
-    } else {
-      $location.search('category', null);
-    }
-    fetchProducts();
+    $scope.fetchProducts();
   };
 
   $scope.addToCart = function (product) {
@@ -65,7 +102,10 @@ angular.module("marketplaceApp").controller("ProductDetailsController", function
   const user = AuthService.getUser();
   $scope.isAdmin = user && user.role === 'admin';
 
-  $http.get(`${window.API_BASE}/products/${$routeParams.id}`).then(res => $scope.product = res.data);
+  $http.get(`${window.API_BASE}/products/${$routeParams.id}`).then(res => {
+    // Data is now automatically unwrapped by AuthInterceptor
+    $scope.product = res.data || {};
+  });
 
   $scope.submitReview = function () {
     $http.post(`${window.API_BASE}/products/${$scope.product.id}/reviews`, { review: $scope.newReview })

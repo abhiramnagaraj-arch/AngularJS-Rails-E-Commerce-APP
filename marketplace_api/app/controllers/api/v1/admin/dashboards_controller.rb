@@ -36,15 +36,15 @@ class Api::V1::Admin::DashboardsController < Api::V1::Admin::BaseController
       products = []
     end
     
-    render json: { 
+    render_success({ 
       stats: stats, 
       products: products.as_json(
         include: {
           seller: { only: [:id, :store_name] },
           category: { only: [:id, :name, :parent_id] }
         },
-        methods: [:image_url]
+        methods: [:image_url, :image]
       )
-    }
+    })
   end
 end

@@ -20,6 +20,20 @@ angular.module("marketplaceApp").factory("AuthInterceptor", function ($window, $
       return config;
     },
 
+    response: function (response) {
+      // ✅ UNIVERSAL DATA UNWRAPPING
+      // Standardized API returns { success: true, message: "...", data: [...] or {...}, meta: {...} }
+      // This interceptor pulls the inner 'data' out so controllers don't have to worry about it.
+      if (response.data && typeof response.data === 'object' && response.data.hasOwnProperty('data')) {
+        // Carry over meta if it exists (very useful for pagination)
+        if (response.data.meta) {
+            response.originalMeta = response.data.meta;
+        }
+        response.data = response.data.data;
+      }
+      return response;
+    },
+
     responseError: function (rejection) {
       if (rejection.status === 401) {
         const AuthService = $injector.get("AuthService");

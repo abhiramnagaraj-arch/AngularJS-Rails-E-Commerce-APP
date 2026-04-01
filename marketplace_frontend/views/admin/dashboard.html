@@ -120,7 +120,7 @@
                     </tr>
                 </thead>
                 <tbody class="stagger-children">
-                    <tr ng-repeat="seller in allSellers" ng-if="seller.verification_status === 'pending'"
+                    <tr ng-repeat="seller in pendingSellers"
                         class="border-bottom border-white-5 hover-bg-white-5 transition-smooth">
                         <td class="ps-4 py-4 fw-bold text-white">{{seller.store_name}}</td>
                         <td class="py-4 text-muted small">{{seller.user ? seller.user.email : 'Unidentified'}}</td>
@@ -135,12 +135,20 @@
                                 ng-click="rejectSeller(seller)">Deny</button>
                         </td>
                     </tr>
-                    <tr ng-if="(allSellers | filter:{verification_status: 'pending'}).length === 0">
+                    <tr ng-if="pendingSellers.length === 0">
                         <td colspan="4" class="text-center py-5 text-muted opacity-50 x-small letter-spacing-2">NO
                             SIGNALS AWAITING AUTHORIZATION</td>
                     </tr>
                 </tbody>
             </table>
+        </div>
+        <!-- Pending Sellers Pagination -->
+        <div class="card-footer bg-white-2 border-top border-white-5 p-3 d-flex justify-content-between align-items-center" ng-if="metaPendingSellers.total_pages > 1">
+            <span class="x-small text-muted fw-bold text-uppercase">Page {{pagePendingSellers}} / {{metaPendingSellers.total_pages}}</span>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-primary border-subtle px-3" ng-click="prevPagePendingSellers()" ng-disabled="pagePendingSellers == 1">Prev</button>
+                <button class="btn btn-outline-primary border-subtle px-3" ng-click="nextPagePendingSellers()" ng-disabled="pagePendingSellers == metaPendingSellers.total_pages">Next</button>
+            </div>
         </div>
     </div>
 
@@ -155,7 +163,9 @@
                     <div class="input-group-glass">
                         <span class="input-prefix text-muted ms-3"><i class="bi bi-search"></i></span>
                         <input type="text" class="form-control ps-5 x-small" placeholder="SCAN STORE IDENTIFIERS..."
-                            ng-model="sellerSearch.store_name">
+                            ng-model="sellerSearch.store_name"
+                            ng-model-options="{ debounce: 500 }"
+                            ng-change="fetchActiveSellers(1)">
                         <div class="input-glow"></div>
                     </div>
                 </div>
@@ -163,7 +173,8 @@
                     <label class="x-small fw-bold text-muted text-uppercase mb-0" for="reactivationFilter">OVERRIDE
                         SIGNALS</label>
                     <input class="form-check-input ms-0" type="checkbox" role="switch" id="reactivationFilter"
-                        ng-model="sellerSearch.onlyReactivation">
+                        ng-model="sellerSearch.onlyReactivation"
+                        ng-change="fetchActiveSellers(1)">
                 </div>
                 <button class="btn btn-sm btn-link text-muted x-small fw-bold border-0 text-decoration-none"
                     ng-if="sellerSearch.store_name || sellerSearch.onlyReactivation"
@@ -183,7 +194,7 @@
                     </tr>
                 </thead>
                 <tbody class="stagger-children">
-                    <tr ng-repeat="seller in allSellers | filter:{store_name: sellerSearch.store_name, verification_status: 'approved', reactivation_requested: (sellerSearch.onlyReactivation ? true : undefined)}"
+                    <tr ng-repeat="seller in activeSellers"
                         class="border-bottom border-white-5 hover-bg-white-5 transition-smooth">
                         <td class="ps-4 py-4 fw-bold text-white">{{seller.store_name}}</td>
                         <td class="py-4 text-muted small">{{seller.user ? seller.user.email : 'N/A'}}</td>
@@ -209,6 +220,14 @@
                 </tbody>
             </table>
         </div>
+        <!-- Active Sellers Pagination -->
+        <div class="card-footer bg-white-2 border-top border-white-5 p-3 d-flex justify-content-between align-items-center" ng-if="metaActiveSellers.total_pages > 1">
+            <span class="x-small text-muted fw-bold text-uppercase">Page {{pageActiveSellers}} / {{metaActiveSellers.total_pages}}</span>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-primary border-subtle px-3" ng-click="prevPageActiveSellers()" ng-disabled="pageActiveSellers == 1">Prev</button>
+                <button class="btn btn-outline-primary border-subtle px-3" ng-click="nextPageActiveSellers()" ng-disabled="pageActiveSellers == metaActiveSellers.total_pages">Next</button>
+            </div>
+        </div>
     </div>
 
     <!-- Catalog Oversight: Global Products -->
@@ -216,16 +235,20 @@
         <div
             class="card-header bg-white-5 border-subtle p-4 d-flex justify-content-between align-items-center flex-wrap gap-4">
             <h5 class="mb-0 fw-bold text-white letter-spacing-1">GLOBAL ARTIFACT CATALOG</h5>
-            <div class="d-flex align-items-center gap-3 flex-wrap">
-                <select
-                    class="glass-select form-select-sm rounded-pill px-4 x-small fw-bold"
-                    ng-model="searchProduct.category_id" ng-options="cat.id as cat.name for cat in flatCategories">
+            <div class="d-flex align-items-center gap-3">
+                <select class="form-select form-select-sm rounded-pill px-4 bg-glass border-0 text-white x-small fw-bold"
+                        style="width: 250px;"
+                        ng-model="searchProduct.category_id"
+                        ng-change="fetchProducts(1)"
+                        ng-options="cat.id as cat.name for cat in flatCategories">
                     <option value="" class="bg-dark">ALL CLASSIFICATIONS</option>
                 </select>
                 <div class="search-input-wrapper-sm" style="width: 200px;">
                     <div class="input-group-glass">
-                        <input type="text" class="form-control x-small" placeholder="SEARCH ARTIFACTS..."
-                            ng-model="searchProduct.name">
+                        <input type="text" class="form-control x-small ps-3" placeholder="SEARCH ARTIFACTS..."
+                            ng-model="searchProduct.name"
+                            ng-model-options="{ debounce: 500 }"
+                            ng-change="fetchProducts(1)">
                         <div class="input-glow"></div>
                     </div>
                 </div>
@@ -310,7 +333,7 @@
                     </tr>
                 </thead>
                 <tbody class="stagger-children">
-                    <tr ng-repeat="product in allProducts | filter: customProductCatalogFilter"
+                    <tr ng-repeat="product in allProducts"
                         class="border-bottom border-white-5 transition-smooth">
                         <td class="ps-4 py-3">
                             <div class="d-flex align-items-center">
@@ -344,6 +367,14 @@
                     </tr>
                 </tbody>
             </table>
+        </div>
+        <!-- Products Pagination -->
+        <div class="card-footer bg-white-2 border-top border-white-5 p-3 d-flex justify-content-between align-items-center" ng-if="metaProducts.total_pages > 1">
+            <span class="x-small text-muted fw-bold text-uppercase">Page {{pageProducts}} / {{metaProducts.total_pages}}</span>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-primary border-subtle px-3" ng-click="prevPageProducts()" ng-disabled="pageProducts == 1">Prev</button>
+                <button class="btn btn-outline-primary border-subtle px-3" ng-click="nextPageProducts()" ng-disabled="pageProducts == metaProducts.total_pages">Next</button>
+            </div>
         </div>
     </div>
 
@@ -507,6 +538,14 @@
             <div class="p-5 text-center text-muted" ng-if="getFilteredOrders().length === 0">
                 <i class="bi bi-binoculars fs-1 opacity-25 d-block mb-3"></i>
                 <h6 class="letter-spacing-2">NO TRANSMISSIONS DETECTED IN SELECTED RANGE.</h6>
+            </div>
+        </div>
+        <!-- Orders Pagination -->
+        <div class="card-footer bg-white-2 border-top border-white-5 p-3 d-flex justify-content-between align-items-center" ng-if="metaOrders.total_pages > 1">
+            <span class="x-small text-muted fw-bold text-uppercase">Page {{pageOrders}} / {{metaOrders.total_pages}}</span>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-primary border-subtle px-3" ng-click="prevPageOrders()" ng-disabled="pageOrders == 1">Prev</button>
+                <button class="btn btn-outline-primary border-subtle px-3" ng-click="nextPageOrders()" ng-disabled="pageOrders == metaOrders.total_pages">Next</button>
             </div>
         </div>
     </div>

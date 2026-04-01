@@ -7,7 +7,7 @@ angular.module("marketplaceApp").factory("CartService", function ($http, $rootSc
     if (timestamp > 0 && timestamp < lastUpdateTimestamp) return;
     if (timestamp > 0) lastUpdateTimestamp = timestamp;
 
-    const rawItems = data.cart_items || (Array.isArray(data) ? data : []);
+    const rawItems = (data && data.cart_items) || (Array.isArray(data) ? data : []);
     
     // STRICT DEDUPLICATION: Use Product ID specifically
     const seen = new Set();
@@ -46,6 +46,7 @@ angular.module("marketplaceApp").factory("CartService", function ($http, $rootSc
         return;
       }
       $http.get(`${window.API_BASE}/cart`).then(res => {
+        // Data is now automatically unwrapped by AuthInterceptor
         updateCartData(res.data, timestamp);
       });
     },
@@ -77,8 +78,10 @@ angular.module("marketplaceApp").factory("CartService", function ($http, $rootSc
       return $http.post(`${window.API_BASE}/cart/add_item`, { product_id: product.id, quantity: quantity })
         .then(res => {
           // The server returns the cart object, update with its cart_items
-          updateCartData(res.data.cart_items || res.data, now); 
-          return res.data;
+          // Data is now automatically unwrapped by AuthInterceptor
+          const cartData = res.data;
+          updateCartData(cartData.cart_items || cartData, now); 
+          return cartData;
         }).catch(err => {
           this.fetchCart(); // Rollback on error
           throw err;
@@ -106,8 +109,9 @@ angular.module("marketplaceApp").factory("CartService", function ($http, $rootSc
 
       return $http.patch(`${window.API_BASE}/cart/update_item/${item.id}`, { quantity: quantity })
         .then(res => {
-          updateCartData(res.data.cart_items || res.data, now);
-          return res.data;
+    const cartData = res.data;
+          updateCartData(cartData.cart_items || cartData, now);
+          return cartData;
         }).catch(err => {
           item.quantity = oldQty; // Rollback
           item.total_price = item.quantity * item.product.price; // Rollback total_price
@@ -132,8 +136,9 @@ angular.module("marketplaceApp").factory("CartService", function ($http, $rootSc
 
       return $http.delete(`${window.API_BASE}/cart/remove_item/${item.id}`)
         .then(res => {
-          updateCartData(res.data.cart_items || res.data, now);
-          return res.data;
+    const cartData = res.data;
+          updateCartData(cartData.cart_items || cartData, now);
+          return cartData;
         }).catch(err => {
           this.fetchCart(); // Rollback
           throw err;

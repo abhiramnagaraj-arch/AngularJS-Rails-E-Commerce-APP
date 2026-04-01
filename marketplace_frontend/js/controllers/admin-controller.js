@@ -11,6 +11,31 @@ angular.module("marketplaceApp").controller("AdminController", function ($scope,
   $scope.groupedOrders = [];
   $scope.sellerSearch = { store_name: '', onlyReactivation: false };
 
+  // Pagination State
+  $scope.nextPagePendingSellers = () => { if ($scope.pagePendingSellers < $scope.metaPendingSellers.total_pages) $scope.fetchPendingSellers($scope.pagePendingSellers + 1); };
+  $scope.prevPagePendingSellers = () => { if ($scope.pagePendingSellers > 1) $scope.fetchPendingSellers($scope.pagePendingSellers - 1); };
+
+  $scope.nextPageActiveSellers = () => { if ($scope.pageActiveSellers < $scope.metaActiveSellers.total_pages) $scope.fetchActiveSellers($scope.pageActiveSellers + 1); };
+  $scope.prevPageActiveSellers = () => { if ($scope.pageActiveSellers > 1) $scope.fetchActiveSellers($scope.pageActiveSellers - 1); };
+
+  $scope.nextPageOrders = () => { if ($scope.pageOrders < $scope.metaOrders.total_pages) $scope.fetchOrders($scope.pageOrders + 1); };
+  $scope.prevPageOrders = () => { if ($scope.pageOrders > 1) $scope.fetchOrders($scope.pageOrders - 1); };
+
+  $scope.nextPageProducts = () => { if ($scope.pageProducts < $scope.metaProducts.total_pages) $scope.fetchProducts($scope.pageProducts + 1); };
+  $scope.prevPageProducts = () => { if ($scope.pageProducts > 1) $scope.fetchProducts($scope.pageProducts - 1); };
+
+  $scope.pageProducts = 1;
+  $scope.metaProducts = {};
+  $scope.pagePendingSellers = 1;
+  $scope.metaPendingSellers = {};
+  $scope.pageActiveSellers = 1;
+  $scope.metaActiveSellers = {};
+  $scope.pageOrders = 1;
+  $scope.metaOrders = {};
+
+  $scope.pendingSellers = [];
+  $scope.activeSellers = [];
+
   $scope.productCategoryFilter = function (product) {
     if (!$scope.searchProduct.category_id) return true;
     if (!product.category) return false;
@@ -125,6 +150,7 @@ angular.module("marketplaceApp").controller("AdminController", function ($scope,
     console.log("[ADMIN] Resetting scanners...");
     $scope.sellerSearch.store_name = '';
     $scope.sellerSearch.onlyReactivation = false;
+    $scope.fetchActiveSellers(1);
     $scope.scrollToSellers();
   };
 
@@ -142,62 +168,97 @@ angular.module("marketplaceApp").controller("AdminController", function ($scope,
     return Object.values(buyersMap);
   };
 
-  const fetchAdminData = () => {
+  $scope.fetchStats = () => {
     $http.get(`${window.API_BASE}/admin/dashboard`).then(res => {
-      if (res.data.stats) $scope.stats = res.data.stats;
-      else $scope.stats = res.data;
+      $scope.stats = res.data.stats || res.data || {};
     }).catch(err => console.error("[ADMIN] Error fetching stats:", err));
+  };
 
-    $http.get(`${window.API_BASE}/admin/products`).then(res => {
-      $scope.allProducts = Array.isArray(res.data) ? res.data : [];
+  $scope.fetchProducts = (page) => {
+    if (page) $scope.pageProducts = page;
+    let url = `${window.API_BASE}/admin/products?page=${$scope.pageProducts}`;
+    if ($scope.searchProduct.category_id) {
+      url += `&category_id=${$scope.searchProduct.category_id}`;
+    }
+    if ($scope.searchProduct.name) {
+      url += `&search=${encodeURIComponent($scope.searchProduct.name)}`;
+    }
+    $http.get(url).then(res => {
+      $scope.allProducts = res.data || [];
+      $scope.metaProducts = res.originalMeta || {};
     }).catch(err => console.error("[ADMIN] Error fetching products:", err));
+  };
 
-    // Fetch sellers
-    $http.get(`${window.API_BASE}/admin/sellers`).then(res => {
-      $scope.allSellers = Array.isArray(res.data) ? res.data : [];
-    }).catch(err => console.error("[ADMIN] Error fetching sellers:", err));
+  $scope.fetchPendingSellers = (page) => {
+    if (page) $scope.pagePendingSellers = page;
+    $http.get(`${window.API_BASE}/admin/sellers?status=pending&page=${$scope.pagePendingSellers}`).then(res => {
+      $scope.pendingSellers = res.data || [];
+      $scope.metaPendingSellers = res.originalMeta || {};
+    }).catch(err => console.error("[ADMIN] Error fetching pending sellers:", err));
+  };
 
-    // Fetch reviews
+  $scope.fetchActiveSellers = (page) => {
+    if (page) $scope.pageActiveSellers = page;
+    let url = `${window.API_BASE}/admin/sellers?status=approved&page=${$scope.pageActiveSellers}`;
+    if ($scope.sellerSearch.store_name) url += `&store_name=${$scope.sellerSearch.store_name}`;
+    if ($scope.sellerSearch.onlyReactivation) url += `&only_reactivation=true`;
+    
+    $http.get(url).then(res => {
+      $scope.activeSellers = res.data || [];
+      $scope.metaActiveSellers = res.originalMeta || {};
+    }).catch(err => console.error("[ADMIN] Error fetching active sellers:", err));
+  };
+
+  $scope.fetchReviews = () => {
     $http.get(`${window.API_BASE}/admin/reviews`).then(res => {
-      const data = Array.isArray(res.data) ? res.data : (res.data.reviews || []);
-      $scope.allReviews = data;
-      // Group reviews by category name
+      const rData = res.data.reviews || res.data || [];
+      $scope.allReviews = rData;
       $scope.groupedReviews = {};
-      data.forEach(review => {
+      rData.forEach(review => {
         const catName = (review.product && review.product.category) ? review.product.category.name : 'General';
-        if (!$scope.groupedReviews[catName]) {
-          $scope.groupedReviews[catName] = [];
-        }
+        if (!$scope.groupedReviews[catName]) $scope.groupedReviews[catName] = [];
         $scope.groupedReviews[catName].push(review);
       });
     }).catch(err => console.error("[ADMIN] Error fetching reviews:", err));
+  };
 
-    // Fetch Global Orders
-    $http.get(`${window.API_BASE}/admin/orders`).then(res => {
-      $scope.allOrders = Array.isArray(res.data) ? res.data : (res.data.orders || []);
+  $scope.fetchOrders = (page) => {
+    if (page) $scope.pageOrders = page;
+    $http.get(`${window.API_BASE}/admin/orders?page=${$scope.pageOrders}`).then(res => {
+      $scope.allOrders = res.data.orders || res.data || [];
+      $scope.metaOrders = res.originalMeta || {};
       $scope.groupOrdersByStatus();
     }).catch(err => {
       console.error("[ADMIN] Error fetching orders:", err);
       $scope.allOrders = [];
       $scope.groupOrdersByStatus();
     });
+  };
 
-    // Fetch categories for the dropdown
+  $scope.fetchCategories = () => {
     $http.get(`${window.API_BASE}/categories`).then(res => {
       let flatCategories = [];
-      const data = Array.isArray(res.data) ? res.data : [];
+      const data = res.data || [];
       data.forEach(cat => {
         flatCategories.push({ id: cat.id, name: cat.name, isParent: true });
         if (cat.subcategories && cat.subcategories.length > 0) {
           cat.subcategories.forEach(sub => {
-            // Using Em Space (U+2003) for better visual grouping in the select dropdown
             flatCategories.push({ id: sub.id, name: " " + sub.name, parentName: cat.name, isParent: false });
           });
         }
       });
       $scope.flatCategories = flatCategories;
-      console.log("[ADMIN] Flat categories populated:", flatCategories.length);
     }).catch(err => console.error("[ADMIN] Error fetching categories:", err));
+  };
+
+  const fetchAdminData = () => {
+    $scope.fetchStats();
+    $scope.fetchProducts();
+    $scope.fetchPendingSellers();
+    $scope.fetchActiveSellers();
+    $scope.fetchReviews();
+    $scope.fetchOrders();
+    $scope.fetchCategories();
   };
 
   fetchAdminData();
@@ -205,7 +266,7 @@ angular.module("marketplaceApp").controller("AdminController", function ($scope,
   $scope.openAddProduct = () => {
     $scope.editingProduct = { active: true };
     $scope.showingForm = true;
-    scrollToSection('adminProductForm');
+    $scope.scrollToSection('adminProductForm');
   };
 
   $scope.deleteProduct = function (product) {

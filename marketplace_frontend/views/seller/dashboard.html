@@ -280,6 +280,14 @@
                 </tbody>
             </table>
         </div>
+        <!-- Products Pagination -->
+        <div class="card-footer bg-white-2 border-top border-white-5 p-3 d-flex justify-content-between align-items-center" ng-if="metaProducts.total_pages > 1">
+            <span class="x-small text-muted fw-bold text-uppercase">Page {{pageProducts}} / {{metaProducts.total_pages}}</span>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-primary border-subtle px-3" ng-click="prevPageProducts()" ng-disabled="pageProducts == 1">Prev</button>
+                <button class="btn btn-outline-primary border-subtle px-3" ng-click="nextPageProducts()" ng-disabled="pageProducts == metaProducts.total_pages">Next</button>
+            </div>
+        </div>
     </div>
 
     <!-- Master Sales Orders -->
@@ -365,9 +373,17 @@
                 </div>
             </div>
 
-            <div ng-if="getFilteredSellerOrders().length === 0" class="p-5 text-center text-muted">
+            <div ng-if="myOrders.length === 0" class="p-5 text-center text-muted">
                 <i class="bi bi-journal-x fs-1 opacity-25 d-block mb-3"></i>
                 <h5 class="letter-spacing-1">NO TRANSMISSION RECORDS FOUND.</h5>
+            </div>
+        </div>
+        <!-- Orders Pagination -->
+        <div class="card-footer bg-white-2 border-top border-white-5 p-3 d-flex justify-content-between align-items-center" ng-if="metaOrders.total_pages > 1">
+            <span class="x-small text-muted fw-bold text-uppercase">Page {{pageOrders}} / {{metaOrders.total_pages}}</span>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-primary border-subtle px-3" ng-click="prevPageOrders()" ng-disabled="pageOrders == 1">Prev</button>
+                <button class="btn btn-outline-primary border-subtle px-3" ng-click="nextPageOrders()" ng-disabled="pageOrders == metaOrders.total_pages">Next</button>
             </div>
         </div>
     </div>

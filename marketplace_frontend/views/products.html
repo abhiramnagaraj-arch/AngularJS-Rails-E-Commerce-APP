@@ -6,15 +6,69 @@
             <h2 class="section-title mb-2">Browse Products</h2>
             <p class="text-muted">Premium quality products from our top-rated sellers.</p>
         </div>
-        <div class="col-md-4">
-            <div class="glass-filter-box p-3 rounded-4 border">
-                <label class="form-label small fw-bold text-muted text-uppercase mb-2">Filter by Category</label>
-                <select class="form-select glass-select" ng-model="selectedCategory"
-                    ng-change="filterProducts()" ng-options="cat.id as cat.name for cat in categories">
-                    <option value="">All Categories</option>
-                </select>
+    <!-- Cosmic Filter Engine -->
+    <div class="row mb-5 animate-on-scroll">
+        <div class="col-12">
+            <div class="glass-filter-box p-4 rounded-4 border shadow-lg">
+                <div class="row g-3">
+                    <!-- Search Input -->
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold text-muted text-uppercase mb-2">Search Signal</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-transparent border-0 ps-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="var(--primary-color)" class="bi bi-search" viewBox="0 0 16 16">
+                                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                                </svg>
+                            </span>
+                            <input type="text" class="form-control glass-input" placeholder="Scan for products..." 
+                                ng-model="filters.search" ng-model-options="{ debounce: 400 }" ng-change="fetchProducts()">
+                        </div>
+                    </div>
+
+                    <!-- Category Select -->
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold text-muted text-uppercase mb-2">Category Sector</label>
+                        <select class="form-select glass-select" ng-model="filters.category_id"
+                            ng-change="fetchProducts()" ng-options="cat.id as cat.name for cat in categories">
+                            <option value="">All Sectors</option>
+                        </select>
+                    </div>
+
+                    <!-- Price Range -->
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold text-muted text-uppercase mb-2">Price Protocol (Min - Max)</label>
+                        <div class="d-flex gap-2">
+                            <input type="number" class="form-control glass-input text-center" placeholder="Min" 
+                                ng-model="filters.min_price" ng-model-options="{ debounce: 500 }" ng-change="fetchProducts()">
+                            <input type="number" class="form-control glass-input text-center" placeholder="Max" 
+                                ng-model="filters.max_price" ng-model-options="{ debounce: 500 }" ng-change="fetchProducts()">
+                        </div>
+                    </div>
+
+                    <!-- Sort -->
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold text-muted text-uppercase mb-2">Sort Priority</label>
+                        <select class="form-select glass-select" ng-model="filters.sort" ng-change="fetchProducts()">
+                            <option value="newest">Newest First</option>
+                            <option value="price_asc">Price: Low to High</option>
+                            <option value="price_desc">Price: High to Low</option>
+                        </select>
+                    </div>
+
+                    <!-- Reset -->
+                    <div class="col-md-1 d-flex align-items-end">
+                        <button class="btn btn-outline-danger w-100 rounded-3 py-2 border-0" 
+                                ng-click="resetFilters()" title="Reset Protocol">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-arrow-counterclockwise" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd" d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2v1z"/>
+                                <path d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966a.25.25 0 0 0 .41-.192z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
+    </div>
     </div>
 
     <!-- Product Grid -->
@@ -33,7 +87,8 @@
         <div class="col-6 col-md-4 col-lg-3 mb-4 animate-on-scroll" ng-repeat="product in products">
             <div class="card h-100 product-card" data-tilt>
                 <!-- Image Container -->
-                <div class="product-img-container d-flex align-items-center justify-content-center overflow-hidden position-relative">
+                <div
+                    class="product-img-container d-flex align-items-center justify-content-center overflow-hidden position-relative">
                     <img ng-src="{{product.image_url || 'https://dummyimage.com/300x300/dee2e6/6c757d.png&text=No+Image'}}"
                         class="img-fluid w-100 h-100" style="object-fit: cover;" alt="{{product.name}}">
                     <div class="product-img-overlay"></div>
@@ -55,28 +110,38 @@
                 <div class="card-footer bg-transparent border-0 p-3 pt-0 d-grid gap-2">
                     <div class="row g-2">
                         <div class="col-4">
-                            <a href="#!/products/{{product.id}}"
-                                class="btn btn-outline-info w-100 rounded-3 p-2" title="View Details">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
-                                  <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.827 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/>
-                                  <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+                            <a href="#!/products/{{product.id}}" class="btn btn-outline-info w-100 rounded-3 p-2"
+                                title="View Details">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                    class="bi bi-eye" viewBox="0 0 16 16">
+                                    <path
+                                        d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.827 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z" />
+                                    <path
+                                        d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z" />
                                 </svg>
                             </a>
                         </div>
                         <div class="col-8">
-                            <button class="btn btn-primary btn-sm w-100 fw-bold rounded-3 py-2" ng-click="addToCart(product)" ng-if="getCartQuantity(product.id) === 0">
+                            <button class="btn btn-primary btn-sm w-100 fw-bold rounded-3 py-2"
+                                ng-click="addToCart(product)" ng-if="getCartQuantity(product.id) === 0">
                                 Add to Cart
                             </button>
-                            <div class="qty-control d-flex align-items-center justify-content-between rounded-3 border border-primary px-2 py-1" ng-if="getCartQuantity(product.id) > 0">
-                                <button class="btn btn-sm btn-link text-primary p-0" ng-click="decreaseQuantity(product)">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-dash" viewBox="0 0 16 16">
-                                      <path d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8z"/>
+                            <div class="qty-control d-flex align-items-center justify-content-between rounded-3 border border-primary px-2 py-1"
+                                ng-if="getCartQuantity(product.id) > 0">
+                                <button class="btn btn-sm btn-link text-primary p-0"
+                                    ng-click="decreaseQuantity(product)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                        class="bi bi-dash" viewBox="0 0 16 16">
+                                        <path d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8z" />
                                     </svg>
                                 </button>
                                 <span class="fw-bold text-white">{{getCartQuantity(product.id)}}</span>
-                                <button class="btn btn-sm btn-link text-primary p-0" ng-click="increaseQuantity(product)">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus" viewBox="0 0 16 16">
-                                      <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                                <button class="btn btn-sm btn-link text-primary p-0"
+                                    ng-click="increaseQuantity(product)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                        class="bi bi-plus" viewBox="0 0 16 16">
+                                        <path
+                                            d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" />
                                     </svg>
                                 </button>
                             </div>
@@ -86,13 +151,50 @@
             </div>
         </div>
 
-        <!-- Empty State -->
-        <div class="col-12 text-center py-5 animate-on-scroll" ng-show="products && products.length == 0">
+    </div>
+
+    <!-- Cosmic Pagination -->
+    <div class="row mt-5 mb-5 animate-on-scroll" ng-if="paginationMeta.total_pages > 1">
+        <div class="col-12 d-flex justify-content-center align-items-center gap-4">
+            <button class="btn btn-outline-primary rounded-circle p-3 d-flex align-items-center justify-content-center"
+                ng-click="prevPage()" ng-disabled="page == 1" style="width: 50px; height: 50px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                    class="bi bi-chevron-left" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd"
+                        d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z" />
+                </svg>
+            </button>
+
+            <div class="pagination-status text-center">
+                <span class="text-muted small text-uppercase fw-bold d-block mb-1">Sector {{page}} /
+                    {{paginationMeta.total_pages}}</span>
+                <div class="pagination-dots d-flex gap-2">
+                    <div ng-repeat="n in [].constructor(paginationMeta.total_pages) track by $index" class="dot"
+                        ng-class="{'active': $index + 1 == page}"></div>
+                </div>
+            </div>
+
+            <button class="btn btn-outline-primary rounded-circle p-3 d-flex align-items-center justify-content-center"
+                ng-click="nextPage()" ng-disabled="page == paginationMeta.total_pages"
+                style="width: 50px; height: 50px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                    class="bi bi-chevron-right" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd"
+                        d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="row" ng-show="products && products.length === 0">
+        <div class="col-12 text-center py-5 animate-on-scroll">
             <div class="empty-cosmic-box p-5 rounded-4 border bg-glass">
                 <div class="fs-1 mb-3">🌌</div>
                 <h4 class="text-white">No products found in this category.</h4>
                 <p class="text-muted">Try adjusting your filters or browsing all categories.</p>
-                <button class="btn btn-outline-primary mt-3 px-4 rounded-pill" ng-click="selectedCategory=''; filterProducts()">Clear Filters</button>
+                <button class="btn btn-outline-primary mt-3 px-4 rounded-pill"
+                    ng-click="resetFilters()">Clear Filters</button>
             </div>
         </div>
     </div>
@@ -148,7 +250,28 @@
     }
 
     @keyframes shimmer-swipe {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(100%); }
+        0% {
+            transform: translateX(-100%);
+        }
+
+        100% {
+            transform: translateX(100%);
+        }
+    }
+
+    /* Pagination Dots */
+    .dot {
+        width: 8px;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        transition: all 0.3s ease;
+    }
+
+    .dot.active {
+        background: var(--primary-color);
+        box-shadow: 0 0 10px var(--primary-glow);
+        width: 20px;
+        border-radius: 4px;
     }
 </style>

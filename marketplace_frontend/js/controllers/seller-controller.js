@@ -5,11 +5,37 @@ angular.module("marketplaceApp").controller("SellerController", function ($scope
   $scope.showingForm = false;
   $scope.editingProduct = {};
 
+  // Pagination State
+  $scope.pageProducts = 1;
+  $scope.metaProducts = {};
+  $scope.pageOrders = 1;
+  $scope.metaOrders = {};
+
+  $scope.fetchMyProducts = (page) => {
+    if (page) $scope.pageProducts = page;
+    $http.get(`${window.API_BASE}/seller/products?page=${$scope.pageProducts}`).then(res => {
+      $scope.myProducts = res.data || [];
+      $scope.metaProducts = res.originalMeta || {};
+    });
+  };
+
+  $scope.fetchMyOrders = (page) => {
+    if (page) $scope.pageOrders = page;
+    $http.get(`${window.API_BASE}/seller/orders?page=${$scope.pageOrders}`).then(res => {
+      $scope.myOrders = res.data || [];
+      $scope.metaOrders = res.originalMeta || {};
+      if ($scope.myOrders.length > 0 && $scope.myOrders[0].order_items && $scope.myOrders[0].order_items.length > 0) {
+        $scope.mySellerProfileId = $scope.myOrders[0].order_items[0].product.seller_id;
+      }
+    });
+  };
+
   const fetchDashboard = () => {
     $http.get(`${window.API_BASE}/sellers/stats`)
       .then(res => {
-        $scope.stats = res.data;
-        $scope.hasProfile = true;
+        // Data is now automatically unwrapped by AuthInterceptor
+        $scope.stats = res.data || {};
+        $scope.hasProfile = !!$scope.stats.store_name;
       })
       .catch(err => {
         console.log("Stats fetch error:", err);
@@ -17,13 +43,15 @@ angular.module("marketplaceApp").controller("SellerController", function ($scope
         $scope.hasProfile = false;
       });
 
-    $http.get(`${window.API_BASE}/seller/products`).then(res => $scope.myProducts = res.data);
+    $scope.fetchMyProducts();
 
     // Fetch categories for the dropdown
     $http.get(`${window.API_BASE}/categories`).then(res => {
-      console.log("Fetched categories for seller:", res.data);
+      // Data is now automatically unwrapped by AuthInterceptor
+      const categoriesArray = res.data || [];
+      console.log("Fetched categories for seller:", categoriesArray);
       let flatCategories = [];
-      res.data.forEach(cat => {
+      categoriesArray.forEach(cat => {
         flatCategories.push({ id: cat.id, name: cat.name, isParent: true });
         if (cat.subcategories && cat.subcategories.length > 0) {
           cat.subcategories.forEach(sub => {
@@ -43,28 +71,17 @@ angular.module("marketplaceApp").controller("SellerController", function ($scope
     // Fetch Seller's scoped OrderItems
     $scope.sellerOrderFilterConfig = { customerId: "" };
     $scope.mySellerProfileId = null;
-
-    $http.get(`${window.API_BASE}/seller/orders`).then(res => {
-      $scope.myOrders = res.data;
-      if ($scope.myOrders.length > 0 && $scope.myOrders[0].order_items && $scope.myOrders[0].order_items.length > 0) {
-        $scope.mySellerProfileId = $scope.myOrders[0].order_items[0].product.seller_id;
-      }
-    });
+    $scope.fetchMyOrders();
   };
   fetchDashboard();
 
-  $scope.requestReactivation = function () {
-    if (confirm("Request protocol restoration? This signal will be transmitted to the Overseer (Admin).")) {
-      $http.patch(`${window.API_BASE}/sellers/request_reactivation`)
-        .then(res => {
-          alert("Reactivation request transmitted. Protocol status: PENDING OVERRIDE.");
-          fetchDashboard();
-        })
-        .catch(err => {
-          alert("Signal failure: " + (err.data ? err.data.error : "Unknown interference"));
-        });
-    }
-  };
+  // Navigation methods
+  $scope.nextPageProducts = () => { if ($scope.pageProducts < $scope.metaProducts.total_pages) $scope.fetchMyProducts($scope.pageProducts + 1); };
+  $scope.prevPageProducts = () => { if ($scope.pageProducts > 1) $scope.fetchMyProducts($scope.pageProducts - 1); };
+
+  $scope.nextPageOrders = () => { if ($scope.pageOrders < $scope.metaOrders.total_pages) $scope.fetchMyOrders($scope.pageOrders + 1); };
+  $scope.prevPageOrders = () => { if ($scope.pageOrders > 1) $scope.fetchMyOrders($scope.pageOrders - 1); };
+
 
   $scope.getUniqueSellerBuyers = function () {
     if (!$scope.myOrders || !Array.isArray($scope.myOrders)) return [];
