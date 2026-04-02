@@ -9,7 +9,8 @@ class Api::V1::Admin::OrdersController < Api::V1::Admin::BaseController
     orders_data = result[:data].as_json(include: { 
       buyer: { only: [:id, :email] },
       shipping_address: {},
-      order_items: { include: { product: { methods: [:image_url] } } } 
+      order_items: { include: 
+      { product: { methods: [:image_url] } } } 
     })
 
     render_success(orders_data, "Orders fetched successfully", :ok, meta: result[:meta])

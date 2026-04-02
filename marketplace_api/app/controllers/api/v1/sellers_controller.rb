@@ -38,7 +38,7 @@ module Api
       end
 
       def request_reactivation
-                            seller = current_user.seller
+        seller = current_user.seller
         return render_error("No seller profile found", [], :not_found) unless seller
         authorize! :update, seller
 
